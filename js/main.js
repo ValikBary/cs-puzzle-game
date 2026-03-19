@@ -159,6 +159,73 @@ const DEBUG_PUZZLES = [
   },
 ];
 
+// ── LEVEL 4 – TEXT ADVENTURE ──────────────────
+const ADVENTURE = {
+  start: "room1",
+  rooms: {
+    room1: {
+      desc: `Your body dissolves into glowing particles.\nYou materialise inside a strange chamber.\nStreams of data pulse around you.\nA Platform of light forms beneath your feet.\nYour body stabilises inside the system.\n\nA pathway opens ahead into the core.\n\nPaths detected: NORTH.`,
+      exits: { 
+        north: "core"
+      },
+    },
+    core: {
+      desc: "> CORE SYSTEM\n\nYou step into the heart of the system.\nA firewall blocks your escape route.\nOther pathways branch into the network.\n\nPaths detected: WEST, NORTH, EAST, SOUTH",
+      exits: {
+        west: "room1", 
+        north: "loop",
+        east: "logic",
+        south: "firewall"
+      }
+    },
+    firewall: {
+      desc: "> FIREWALL ACTIVE\n\nA glowing barrier blocks your exit from the system.\n\nBinary access code required.\n\nConvert the collected binary sequence into decimal.\n\nType: solve [decimal]",
+      exits: {
+        west: "core"
+      },
+      puzzle: {
+        type: "binary",
+        success: "exit"
+      }
+    },
+    logic: {
+      desc: "",
+      exits: {},
+      puzzle: {
+        success: "firewall"
+      }
+    },    
+    loop: {
+      desc: "You walk forward...\n\nThe system flickers...\n\nYou are back where you started.\n\nPaths: NORTH",
+      exits: { north: "loop" },
+      puzzle: {
+        answer: "break",
+        success: "debug"
+      }
+    },
+    debug: {
+      desc: "> DEBUG TERMINAL\n\n> ERROR DETECTED\n\nCode snippet:\n\n total = num\n\nThe system is not accumulating values correctly.\n\nType: solve [code]",
+      exits: {},
+      puzzle: {
+        answer: "total += num",
+        success: "exit"
+      }
+    },
+    exit: {
+      desc: "> SYSTEM RESTORED\n\nAll errors resolved.\n\nYou feel your body reforming...\n\n> EXITING DIGITAL WORLD...\n\n🎉 You escaped the system!",
+      exits: {},
+      win: true
+    },    
+  },
+};
+
+const ROOM_BITS = {
+  loop: 1,
+  debug: 0,
+  logic: 1
+};
+
+
 // ══════════════════════════════════════════════
 // COMPONENTS
 // ══════════════════════════════════════════════
@@ -593,6 +660,384 @@ function Level3({ onComplete, onBack }) {
           </button>
         </>
       )}
+    </div>
+  );
+}
+
+// ── LEVEL 4 – TEXT ADVENTURE ──────────────────
+
+function Level4({ onComplete, onBack }) {
+  const [room, setRoom] = useState("room1");
+  const [displayedHistory, setDisplayedHistory] = useState([]);
+  const [history, setHistory] = useState([
+  { text: "> BOOTING SYSTEM...", type: "system" },
+  { text: "> ESTABLISHING LINK...", type: "system" },
+  { text: "> WARNING: USER DIGITISED", type: "error" },
+  { text: ADVENTURE.rooms["room1"].desc, type: "system" },
+  { text: "Type: go [direction] / look / help", type: "system" },
+  ]);
+  const [input, setInput] = useState("");
+  const [won, setWon] = useState(false);
+  const [score, setScore] = useState(300);
+  const historyRef = useRef(null);
+  const inputRef = useRef(null);
+  const [loopCount, setLoopCount] = useState(0);
+  const [logicPuzzle, setLogicPuzzle] = useState(null )
+  const [binaryCode, setBinaryCode] = useState([]);
+
+  useEffect(() => {
+    if (historyRef.current) {
+      historyRef.current.scrollTo({
+        top: historyRef.current.scrollHeight,
+        behavior: "smooth"
+      });
+    }
+  }, [displayedHistory]);
+
+  useEffect(() => {
+    history.forEach((line) => {
+      addLine(line.text, line.type);
+    });
+  }, []);
+
+  const typingQueue = useRef(Promise.resolve());
+
+  function addLine(text, type = "system") {
+    typingQueue = typingQueue.then(() => {
+      return new Promise((resolve) => {
+        const line = { text: "", type };
+
+        setDisplayedHistory(h => [...h, line]);
+
+        const lines = text.split("\n");
+        let currentText = "";
+        let lineIndex = 0;
+
+        function typeLine() {
+          if (lineIndex >= lines.length) {
+            resolve();
+            return;
+          }
+
+          let charIndex = 0;
+          const currentLine = lines[lineIndex];
+
+          function typeChar() {
+            charIndex++;
+
+            currentText += currentLine[charIndex - 1] || "";
+
+            setDisplayedHistory(h => {
+              const updated = [...h];
+              updated[updated.length - 1] = {
+                ...line,
+                text: currentText,
+              };
+              return updated;
+            });
+
+            if (charIndex < currentLine.length) {
+              setTimeout(typeChar, 40);
+            } else {
+              // add newline after finishing line
+              currentText += "\n";
+              lineIndex++;
+
+              setTimeout(typeLine, 700); // ⏸ pause between lines
+            }
+          }
+
+          typeChar();
+        }
+
+        typeLine();
+      });
+    });
+
+    return typingQueue;
+  }
+
+  function generateLogicPuzzle() {
+    const gates = ["AND", "OR", "XOR", "NAND", "NOR"];
+
+    const a = Math.round(Math.random());
+    const b = Math.round(Math.random());
+    const c = Math.round(Math.random());
+
+    const gate1 = gates[Math.floor(Math.random() * gates.length)];
+    const gate2 = gates[Math.floor(Math.random() * gates.length)];
+
+    const step1 = computeGate(gate1, a, b);
+    const final = computeGate(gate2, step1, c);
+
+    return {
+      a, b, c,
+      gate1, gate2,
+      answer: String(final)
+    };
+  }
+
+  function computeGate(gate, a, b) {
+    switch (gate) {
+      case "AND": return a & b;
+      case "OR": return a | b;
+      case "XOR": return a ^ b;
+      case "NAND": return (a & b) === 1 ? 0 : 1;
+      case "NOR": return (a | b) === 1 ? 0 : 1;
+      default: return 0;
+    }
+  }
+
+  function handleCommand(cmd) {
+    const raw = cmd.trim().toLowerCase();
+    addLine(`> ${cmd}`, "player");
+
+    const currentRoom = ADVENTURE.rooms[room];
+
+    // HELP
+    if (raw === "help") {
+      addLine("Commands: go [direction], look, solve, help, ", "system");
+    
+    // LOOK
+    } else if (raw === "look") {
+      addLine(currentRoom.desc, "system");
+
+    // GO
+    } else if (raw.startsWith("go ")) {
+      const dir = raw.replace("go ", "").trim();
+
+      if (currentRoom.exits[dir]) {
+        const nextId = currentRoom.exits[dir];
+        const nextRoom = ADVENTURE.rooms[nextId];
+
+        setRoom(nextId);
+
+        // FIREWALL SPECIAL DISPLAY
+        if (nextId === "firewall") {
+          const code = binaryCode.join("");
+
+          addLine(nextRoom.desc, "system");
+
+          if (code.length > 0) {
+            addLine(`> COLLECTED BINARY: ${code}`, "system");
+          }
+
+        // LOGIC ROOM
+        } else if (nextId === "logic") {
+          const newPuzzle = generateLogicPuzzle();
+          setLogicPuzzle(newPuzzle);
+
+          const desc = `> LOGIC CIRCUIT DETECTED\n\n\
+            ${newPuzzle.a} ──┐\n\
+                ${newPuzzle.gate1} ──┐\n\
+            ${newPuzzle.b} ──┘     │\n\
+                      ${newPuzzle.gate2} ── ?\n\
+            ${newPuzzle.c} ─────────┘\n\n\
+          Type: solve [0 or 1]`;
+
+          addLine(desc, "system");
+
+        // LOOP ROOM
+        } else if (nextId === "loop") {
+          setLoopCount(c => c + 1);
+
+          addLine(nextRoom.desc, "system");
+
+          setTimeout(() => {
+            setLoopCount(c => {
+              if (c >= 2) {
+                addLine("> WARNING: REPEATING STATE DETECTED", "error");
+                addLine("> POSSIBLE INFINITE LOOP", "error");
+              }
+              return c;
+            });
+          }, 300);
+
+        // DEFAULT ROOM
+        } else {
+          addLine(nextRoom.desc, "system");
+          setLoopCount(0); // reset when leaving loop
+        }
+        if (nextRoom.win) {
+          setWon(true);
+          addLine("🎉 You escaped! Well done!", "success");
+        }
+      } else {
+        addLine(`You can't go ${dir} from here.`, "error");
+        setScore(s => Math.max(0, s - 10));
+      }
+    
+    // SOLVE
+    } else if (raw.startsWith("solve ")) {
+      const answer = raw.replace("solve ", "").trim();
+      const currentRoom = ADVENTURE.rooms[room];
+
+      // LOGIC ROOM SPECIAL HANDLING
+      if (room === "logic" && logicPuzzle) {
+        if (answer === logicPuzzle.answer) {
+          const nextRoom = ADVENTURE.rooms[currentRoom.puzzle.success];
+          const bit = ROOM_BITS[room] ?? Math.round(Math.random());
+
+          setRoom(currentRoom.puzzle.success);
+
+          addLine("✅ Correct — circuit solved!", "success")
+            .then(() => {
+              setBinaryCode(prev => [...prev, bit]);
+              return addLine(`> DATA FRAGMENT ACQUIRED: ${bit}`, "system");
+            })
+            .then(() => addLine("> PROCESSING...", "system"))
+            .then(() => new Promise(r => setTimeout(r, 2000)))
+            .then(() => {
+              setDisplayedHistory([]);
+              return addLine(nextRoom.desc, "system");
+            });
+
+        } else {
+          addLine(`❌ Incorrect — evaluate ${logicPuzzle.gate1} then ${logicPuzzle.gate2}`, "error");
+          addLine("💡 AND=both 1 | OR=any 1 | XOR=different | NAND=NOT AND | NOR=NOT OR", "system");
+          setScore(s => Math.max(0, s - 10));
+        }
+
+        return;
+      }
+
+      if (room === "firewall") {
+        const binaryString = binaryCode.join("");
+
+        if (binaryString.length === 0) {
+          addLine("❌ No data fragments collected.", "error");
+          return;
+        }
+
+        const correctDecimal = parseInt(binaryString, 2);
+
+        if (answer === String(correctDecimal)) {
+          addLine("✅ ACCESS GRANTED — FIREWALL DISABLED", "success");
+
+          const nextRoom = ADVENTURE.rooms[currentRoom.puzzle.success];
+          setRoom(currentRoom.puzzle.success);
+
+          addLine("> DECRYPTING...", "system")
+            .then(() => new Promise(r => setTimeout(r, 800)))
+            .then (() => addLine("> ACCESSING CORE...", "system"))
+            .then(() => new Promise(r => setTimeout(r, 800)))
+            .then(() => {
+              setDisplayedHistory([]);
+              return addLine(nextRoom.desc, "system");
+            })
+        } else {
+          addLine(`❌ Incorrect. Hint: ${binaryString} (binary) → ? (decimal)`, "error");
+          setScore(s => Math.max(0, s - 10));
+        }
+
+        return;
+      }
+
+      // 🔥 ALL PUZZLES
+      if (currentRoom.puzzle) {
+        if (answer === currentRoom.puzzle.answer) {
+          const nextRoom = ADVENTURE.rooms[currentRoom.puzzle.success];
+
+          const bit = ROOM_BITS[room] ?? Math.round(Math.random());
+
+          setRoom(currentRoom.puzzle.success);
+
+          addLine("✅ SOLUTION ACCEPTED", "success")
+          .then(() => {
+            setBinaryCode(prev => [...prev, bit]);
+            return addLine(`> DATA FRAGMENT ACQUIRED: ${bit}`, "system");
+          })
+          .then(() => {
+            return addLine(`> CURRENT CODE: ${binaryCode.concat(bit).join("")}`, "system");
+          })
+          .then(() => addLine("> PROCESSING...", "system"))
+          .then(() => new Promise(r => setTimeout(r, 2000)))
+          .then(() => {
+            setDisplayedHistory([]);
+            return addLine(nextRoom.desc, "system");
+          });
+          
+
+        } else {
+          addLine("❌ Incorrect solution. Try again.", "error");
+          setScore(s => Math.max(0, s - 10));
+        }
+      } else {
+        addLine("Nothing to solve here.", "error");
+      }
+    // UNKNOW COMMAND      
+    } else {
+      addLine(`Unknown command: '${raw}'. Type 'help' for commands.`, "error");
+      setScore(s => Math.max(0, s - 5));
+    }
+  }
+
+  function onKeyDown(e) {
+    if (e.key === "Enter" && input.trim()) {
+      handleCommand(input);
+      setInput("");
+    }
+  }
+
+  if (won) {
+    const stars = score >= 280 ? "⭐⭐⭐" : score >= 180 ? "⭐⭐" : "⭐";
+    return (
+      <div className="screen">
+        <div className="victory-card">
+          <div className="victory-title">ESCAPED!</div>
+          <div className="stars">{stars}</div>
+          <div style={{ color: "var(--text-dim)", marginBottom: 8 }}>Text Adventure complete</div>
+          <div className="victory-score">{score} pts</div>
+          <div style={{ color: "var(--text-dim)", fontSize: "0.8rem", marginBottom: 24 }}>
+            The answer was 42 — <em>"loops + 1"</em> = a reference to the classic programming joke! (Also the answer to life, the universe and everything 😄)
+          </div>
+          <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+            <button className="btn btn-ghost" onClick={onBack}>← Menu</button>
+            <button className="btn btn-primary" onClick={() => onComplete(score)}>Next Level →</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="game-screen">
+      <div className="game-header">
+        <button className="btn btn-ghost" style={{ padding: "6px 12px", fontSize: "0.7rem" }} onClick={onBack}>← Back</button>
+        <div className="level-tag">LEVEL 4</div>
+        <div className="game-title">Text Adventure</div>
+        <div className="score-display">{score} pts</div>
+      </div>
+      <div className="progress-bar">
+        <div className="progress-fill" style={{ width: "60%", background: "linear-gradient(90deg, #7fff00, #00f5ff)" }} />
+      </div>
+
+      <div className="info-box">
+        Escape the CS Dungeon! Type commands to navigate. Wrong commands cost points 💀
+      </div>
+
+      <div className="adventure-box" ref={historyRef}>
+        {displayedHistory.map((line, i) => (
+          <div key={i} className={`adventure-line ${line.type}`} style={{ whiteSpace: "pre-wrap" }}>{line.text}</div>
+        ))}
+      </div>
+
+      <div className="adventure-input-row">
+        <span className="adventure-prompt">$&gt;&nbsp;</span>
+        <input
+          ref={inputRef}
+          className="adventure-input"
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={onKeyDown}
+          placeholder="type a command and press Enter..."
+          autoFocus
+        />
+      </div>
+
+      <div className="hint-text">
+        💡 Commands: <span style={{ color: "var(--accent3)" }}>go north</span> / <span style={{ color: "var(--accent3)" }}>go south</span> / <span style={{ color: "var(--accent3)" }}>go east</span> / <span style={{ color: "var(--accent3)" }}>go west</span> / <span style={{ color: "var(--accent3)" }}>look</span> / <span style={{ color: "var(--accent3)" }}>solve [code]</span>
+      </div>
     </div>
   );
 }
