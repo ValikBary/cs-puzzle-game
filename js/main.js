@@ -164,10 +164,9 @@ const ADVENTURE = {
   start: "room1",
   rooms: {
     room1: {
-      desc: `Your body dissolves into glowing particles.\nYou materialise inside a strange chamber.\nStreams of data pulse around you.\nA Platform of light forms beneath your feet.\nYour body stabilises inside the system.\n\nA pathway opens ahaead into the core.\n\nPaths detected: FORWARD.`,
+      desc: `Your body dissolves into glowing particles.\nYou materialise inside a strange chamber.\nStreams of data pulse around you.\nA Platform of light forms beneath your feet.\nYour body stabilises inside the system.\n\nA pathway opens ahead into the core.\n\nPaths detected: NORTH.`,
       exits: { 
-        forward: "core",
-        east: "logic"
+        north: "core"
       },
     },
     core: {
@@ -193,7 +192,6 @@ const ADVENTURE = {
       desc: "",
       exits: {},
       puzzle: {
-        answer: "1",
         success: "firewall"
       }
     },    
@@ -201,7 +199,7 @@ const ADVENTURE = {
       desc: "You walk forward...\n\nThe system flickers...\n\nYou are back where you started.\n\nPaths: NORTH",
       exits: { north: "loop" },
       puzzle: {
-        command: "break",
+        answer: "break",
         success: "debug"
       }
     },
@@ -209,7 +207,7 @@ const ADVENTURE = {
       desc: "> DEBUG TERMINAL\n\n> ERROR DETECTED\n\nCode snippet:\n\n total = num\n\nThe system is not accumulating values correctly.\n\nType: solve [code]",
       exits: {},
       puzzle: {
-        command: "total += num",
+        answer: "total += num",
         success: "exit"
       }
     },
@@ -667,6 +665,7 @@ function Level3({ onComplete, onBack }) {
 }
 
 // ── LEVEL 4 – TEXT ADVENTURE ──────────────────
+
 function Level4({ onComplete, onBack }) {
   const [room, setRoom] = useState("room1");
   const [displayedHistory, setDisplayedHistory] = useState([]);
@@ -701,7 +700,7 @@ function Level4({ onComplete, onBack }) {
     });
   }, []);
 
-  let typingQueue = Promise.resolve();
+  const typingQueue = useRef(Promise.resolve());
 
   function addLine(text, type = "system") {
     typingQueue = typingQueue.then(() => {
@@ -795,10 +794,15 @@ function Level4({ onComplete, onBack }) {
 
     const currentRoom = ADVENTURE.rooms[room];
 
+    // HELP
     if (raw === "help") {
       addLine("Commands: go [direction], look, solve, help, ", "system");
+    
+    // LOOK
     } else if (raw === "look") {
       addLine(currentRoom.desc, "system");
+
+    // GO
     } else if (raw.startsWith("go ")) {
       const dir = raw.replace("go ", "").trim();
 
@@ -862,9 +866,40 @@ function Level4({ onComplete, onBack }) {
         addLine(`You can't go ${dir} from here.`, "error");
         setScore(s => Math.max(0, s - 10));
       }
+    
+    // SOLVE
     } else if (raw.startsWith("solve ")) {
       const answer = raw.replace("solve ", "").trim();
       const currentRoom = ADVENTURE.rooms[room];
+
+      // LOGIC ROOM SPECIAL HANDLING
+      if (room === "logic" && logicPuzzle) {
+        if (answer === logicPuzzle.answer) {
+          const nextRoom = ADVENTURE.rooms[currentRoom.puzzle.success];
+          const bit = ROOM_BITS[room] ?? Math.round(Math.random());
+
+          setRoom(currentRoom.puzzle.success);
+
+          addLine("✅ Correct — circuit solved!", "success")
+            .then(() => {
+              setBinaryCode(prev => [...prev, bit]);
+              return addLine(`> DATA FRAGMENT ACQUIRED: ${bit}`, "system");
+            })
+            .then(() => addLine("> PROCESSING...", "system"))
+            .then(() => new Promise(r => setTimeout(r, 2000)))
+            .then(() => {
+              setDisplayedHistory([]);
+              return addLine(nextRoom.desc, "system");
+            });
+
+        } else {
+          addLine(`❌ Incorrect — evaluate ${logicPuzzle.gate1} then ${logicPuzzle.gate2}`, "error");
+          addLine("💡 AND=both 1 | OR=any 1 | XOR=different | NAND=NOT AND | NOR=NOT OR", "system");
+          setScore(s => Math.max(0, s - 10));
+        }
+
+        return;
+      }
 
       if (room === "firewall") {
         const binaryString = binaryCode.join("");
@@ -884,7 +919,7 @@ function Level4({ onComplete, onBack }) {
 
           addLine("> DECRYPTING...", "system")
             .then(() => new Promise(r => setTimeout(r, 800)))
-            .then (() => addLine(">ACCESSING CORE...", "system"))
+            .then (() => addLine("> ACCESSING CORE...", "system"))
             .then(() => new Promise(r => setTimeout(r, 800)))
             .then(() => {
               setDisplayedHistory([]);
@@ -924,18 +959,13 @@ function Level4({ onComplete, onBack }) {
           
 
         } else {
-          if (room === "logic" && logicPuzzle) {
-            addLine(`❌ Incorrect — evaluate ${logicPuzzle.gate1} then ${logicPuzzle.gate2}`, "error");          
-            addLine("💡 AND=both 1 | OR=any 1 | XOR=different | NAND=NOT AND | NOR=NOT OR", "system");
-          } else {
-            addLine("❌ Incorrect solution. Try again.", "error");
-          } 
-          
+          addLine("❌ Incorrect solution. Try again.", "error");
           setScore(s => Math.max(0, s - 10));
         }
       } else {
         addLine("Nothing to solve here.", "error");
-      }      
+      }
+    // UNKNOW COMMAND      
     } else {
       addLine(`Unknown command: '${raw}'. Type 'help' for commands.`, "error");
       setScore(s => Math.max(0, s - 5));
