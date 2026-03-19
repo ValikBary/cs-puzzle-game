@@ -164,38 +164,39 @@ const ADVENTURE = {
   start: "room1",
   rooms: {
     room1: {
-      desc: "Your body dissolves into glowing particles.\n\nYou materialise inside a vast digital grid. Streams of data pulse around you.\n\nPaths detected: NORTH, EAST.",
+      desc: `Your body dissolves into glowing particles.\nYou materialise inside a strange chamber.\nStreams of data pulse around you.\nA Platform of light forms beneath your feet.\nYour body stabilises inside the system.\n\nA pathway opens ahaead into the core.\n\nPaths detected: FORWARD.`,
       exits: { 
-        north: "firewall", 
-        east: "terminal1" 
+        forward: "core",
+        east: "logic"
       },
     },
-    firewall: {
-      desc: "> FIREWALL DETECTED\n\nA glowing barrier blocks your path.\n\nINPUT: 1 OR 0\n\nType: solve [answer]",
-      exits: { west: "room1"},
-      puzzle: { 
-        answer: "1", 
-        success: "core"
+    core: {
+      desc: "> CORE SYSTEM\n\nYou step into the heart of the system.\nA firewall blocks your escape route.\nOther pathways branch into the network.\n\nPaths detected: WEST, NORTH, EAST, SOUTH",
+      exits: {
+        west: "room1", 
+        north: "loop",
+        east: "logic",
+        south: "firewall"
       }
     },
-    logic: {
-      desc: "> LOGIC CIRCUIT DETECTED\n\n\
-      1 ──┐\n\
-          AND ──┐\n\
-      0 ──┘     │\n\
-                OR ── ?\n\
-      1 ─────────┘\n\n\
-    Type: solve [0 or 1]",
-      exits: {},
+    firewall: {
+      desc: "> FIREWALL ACTIVE\n\nA glowing barrier blocks your exit from the system.\n\nBinary access code required.\n\nConvert the collected binary sequence into decimal.\n\nType: solve [decimal]",
+      exits: {
+        west: "core"
+      },
       puzzle: {
-        answer: "1",
+        type: "binary",
         success: "exit"
       }
     },
-    core: {
-      desc: "> CORE SYSTEM\n\nYou have breached the firewall.\n\nA central system pulses before you.\n\nPaths detected: NORTH",
-      exits: {north: "loop"}
-    },
+    logic: {
+      desc: "",
+      exits: {},
+      puzzle: {
+        answer: "1",
+        success: "firewall"
+      }
+    },    
     loop: {
       desc: "You walk forward...\n\nThe system flickers...\n\nYou are back where you started.\n\nPaths: NORTH",
       exits: { north: "loop" },
@@ -218,6 +219,12 @@ const ADVENTURE = {
       win: true
     },    
   },
+};
+
+const ROOM_BITS = {
+  loop: 1,
+  debug: 0,
+  logic: 1
 };
 
 
@@ -677,6 +684,7 @@ function Level4({ onComplete, onBack }) {
   const inputRef = useRef(null);
   const [loopCount, setLoopCount] = useState(0);
   const [logicPuzzle, setLogicPuzzle] = useState(null )
+  const [binaryCode, setBinaryCode] = useState([]);
 
   useEffect(() => {
     if (historyRef.current) {
@@ -793,12 +801,25 @@ function Level4({ onComplete, onBack }) {
       addLine(currentRoom.desc, "system");
     } else if (raw.startsWith("go ")) {
       const dir = raw.replace("go ", "").trim();
+
       if (currentRoom.exits[dir]) {
         const nextId = currentRoom.exits[dir];
         const nextRoom = ADVENTURE.rooms[nextId];
+
         setRoom(nextId);
 
-        if (nextId === "logic") {
+        // FIREWALL SPECIAL DISPLAY
+        if (nextId === "firewall") {
+          const code = binaryCode.join("");
+
+          addLine(nextRoom.desc, "system");
+
+          if (code.length > 0) {
+            addLine(`> COLLECTED BINARY: ${code}`, "system");
+          }
+
+        // LOGIC ROOM
+        } else if (nextId === "logic") {
           const newPuzzle = generateLogicPuzzle();
           setLogicPuzzle(newPuzzle);
 
@@ -811,12 +832,9 @@ function Level4({ onComplete, onBack }) {
           Type: solve [0 or 1]`;
 
           addLine(desc, "system");
-        } else {
-          addLine(nextRoom.desc, "system");
-        }
 
-        // track loop visits
-        if (nextId === "loop") {
+        // LOOP ROOM
+        } else if (nextId === "loop") {
           setLoopCount(c => c + 1);
 
           addLine(nextRoom.desc, "system");
@@ -830,9 +848,11 @@ function Level4({ onComplete, onBack }) {
               return c;
             });
           }, 300);
+
+        // DEFAULT ROOM
         } else {
-          setLoopCount(0); // reset when leaving loop
           addLine(nextRoom.desc, "system");
+          setLoopCount(0); // reset when leaving loop
         }
         if (nextRoom.win) {
           setWon(true);
@@ -842,96 +862,80 @@ function Level4({ onComplete, onBack }) {
         addLine(`You can't go ${dir} from here.`, "error");
         setScore(s => Math.max(0, s - 10));
       }
-    } else if (raw === "break") {
-      const currentRoom = ADVENTURE.rooms[room]
-
-      if (currentRoom.puzzle && currentRoom.puzzle.command === "break") {
-        const nextRoom = ADVENTURE.rooms[currentRoom.puzzle.success];
-
-        setRoom(currentRoom.puzzle.success);
-
-        addLine("✅ LOOP TERMINATED — CONTROL RESTORED", "success")
-          .then(() => addLine(">EXITING LOOP...", "system"))
-          .then(() => new Promise(r => setTimeout(r, 2000)))
-          .then(() => {
-            setDisplayedHistory([]);
-            return addLine(nextRoom.desc, "system");
-          });
-      } else {
-        addLine("❌ INCORRECT COMMAND - What command can break out of a loop?", "error");
-      }
-    } else if (raw.startsWith("fix ")) {
-      const currentRoom = ADVENTURE.rooms[room];
-
-      if (currentRoom.puzzle && raw === currentRoom.puzzle.command) {
-        const nextRoom = ADVENTURE.rooms[currentRoom.puzzle.success];
-
-        setRoom(currentRoom.puzzle.success);
-
-        addLine("✅ CODE FIXED — SYSTEM STABILISING...", "success")
-          .then(() => new Promise(r => setTimeout(r, 600)))
-          .then(() => addLine("> RECOMPILING...", "system"))
-          .then(() => new Promise(r => setTimeout(r, 600)))
-          .then(() => {
-            setDisplayedHistory([]);
-            return addLine(nextRoom.desc, "system");
-          });
-
-      } else {
-        addLine("❌ Incorrect fix. Hint: you need to ADD to total, not replace it.", "error");
-        setScore(s => Math.max(0, s - 10));
-      }        
     } else if (raw.startsWith("solve ")) {
       const answer = raw.replace("solve ", "").trim();
       const currentRoom = ADVENTURE.rooms[room];
 
-      // LOGIC ROOM HANDLING
-      if (room === "logic" && logicPuzzle) {
-        if (answer === logicPuzzle.answer) {
-          addLine("✅ Correct — circuit solved!", "success");
+      if (room === "firewall") {
+        const binaryString = binaryCode.join("");
+
+        if (binaryString.length === 0) {
+          addLine("❌ No data fragments collected.", "error");
+          return;
+        }
+
+        const correctDecimal = parseInt(binaryString, 2);
+
+        if (answer === String(correctDecimal)) {
+          addLine("✅ ACCESS GRANTED — FIREWALL DISABLED", "success");
 
           const nextRoom = ADVENTURE.rooms[currentRoom.puzzle.success];
           setRoom(currentRoom.puzzle.success);
 
-          addLine("> TRANSFERRING...", "system")
-            .then(() => new Promise(r => setTimeout(r, 600)))
+          addLine("> DECRYPTING...", "system")
+            .then(() => new Promise(r => setTimeout(r, 800)))
+            .then (() => addLine(">ACCESSING CORE...", "system"))
+            .then(() => new Promise(r => setTimeout(r, 800)))
             .then(() => {
               setDisplayedHistory([]);
               return addLine(nextRoom.desc, "system");
-            });
-
+            })
         } else {
-          addLine(`❌ Incorrect — remember:
-            1. Solve ${logicPuzzle.gate1} first
-            2. Then apply ${logicPuzzle.gate2}`, "error");
+          addLine(`❌ Incorrect. Hint: ${binaryString} (binary) → ? (decimal)`, "error");
           setScore(s => Math.max(0, s - 10));
         }
 
         return;
       }
 
+      // 🔥 ALL PUZZLES
       if (currentRoom.puzzle) {
         if (answer === currentRoom.puzzle.answer) {
-          addLine("✅ ACCESS GRANTED — FIREWALL DISABLED", "success");
-
           const nextRoom = ADVENTURE.rooms[currentRoom.puzzle.success];
+
+          const bit = ROOM_BITS[room] ?? Math.round(Math.random());
+
           setRoom(currentRoom.puzzle.success);
 
-          addLine("> TRANSFERRING TO NEW NODE...", "system")
-          .then(() => new Promise(r => setTimeout(r, 600)))
-          .then(() => addLine("> REWRITING MEMORY...", "system"))
+          addLine("✅ SOLUTION ACCEPTED", "success")
+          .then(() => {
+            setBinaryCode(prev => [...prev, bit]);
+            return addLine(`> DATA FRAGMENT ACQUIRED: ${bit}`, "system");
+          })
+          .then(() => {
+            return addLine(`> CURRENT CODE: ${binaryCode.concat(bit).join("")}`, "system");
+          })
+          .then(() => addLine("> PROCESSING...", "system"))
           .then(() => new Promise(r => setTimeout(r, 2000)))
           .then(() => {
             setDisplayedHistory([]);
             return addLine(nextRoom.desc, "system");
           });
+          
+
         } else {
-          addLine("❌ ACCESS DENIED — Incorrect logic. OR outputs 1 if at least one input is 1.", "error");
+          if (room === "logic" && logicPuzzle) {
+            addLine(`❌ Incorrect — evaluate ${logicPuzzle.gate1} then ${logicPuzzle.gate2}`, "error");          
+            addLine("💡 AND=both 1 | OR=any 1 | XOR=different | NAND=NOT AND | NOR=NOT OR", "system");
+          } else {
+            addLine("❌ Incorrect solution. Try again.", "error");
+          } 
+          
           setScore(s => Math.max(0, s - 10));
         }
       } else {
         addLine("Nothing to solve here.", "error");
-      }
+      }      
     } else {
       addLine(`Unknown command: '${raw}'. Type 'help' for commands.`, "error");
       setScore(s => Math.max(0, s - 5));
