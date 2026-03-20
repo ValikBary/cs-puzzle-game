@@ -182,15 +182,29 @@ Paths detected: NORTH.`,
       },
     },
     core: {
-      // enterFirst: ""
-      // enterOther: ""
-      desc: "> CORE SYSTEM\n\nYou step into the heart of the system.\nA firewall blocks your escape route.\nOther pathways branch into the network.\n\nPaths detected: WEST, NORTH, EAST, SOUTH",
+      enterFirst: `> CORE SYSTEM ACCESSED
+You step into the heart of the system.
+Data streams converge here, flowing in all directions.
+A large firewall pulses at the far end - blocking your escape`,
+      enterOther: "You return to the core system. DAta streams continue to pulse around you.",
+      desc: `You stand within the central node of the network.
+Streams of data surge through glowing pathways, branching in every direction.
+
+A translucent screen materialises in front of you.
+
+> OBJECTIVE: LOCATE ACCESS CODE TO BYPASS FIREWALL
+
+The firewall looms ahead - a barrier between you and escape.
+
+Other paths lead deeper into the system.
+
+Paths detected: NORTH, EAST, SOUTH, WEST, FIREWALL`,
       exits: {
-        west: "room1", 
         north: "loopRoom",
         east: "logic",
-        south: "debug"
-        //door to firewall: "firewall",
+        south: "debug",
+        west: "room1",
+        firewall: "firewall"
       }
     },
     firewall: {
