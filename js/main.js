@@ -160,6 +160,7 @@ const DEBUG_PUZZLES = [
 ];
 
 // ── LEVEL 4 – TEXT ADVENTURE ──────────────────
+
 const ADVENTURE = {
   start: "room1",
   rooms: {
@@ -171,7 +172,9 @@ A platform of energy stabilises beneath your feet, holding your form together.
 
 > WARNING: CONSCIOUSNESS TRANSFER UNSTABLE
 > USER SUCCESSFULLY DIGITISED`,
+
       enterOther: "You return to the digitising platform. The system hums quietly around you.",
+
       desc: `Streams of data pulse through the walls like veins of light.
 This is where you entered the system.
 A single pathway leads deeper into the network.
@@ -186,7 +189,9 @@ Paths detected: NORTH.`,
 You step into the heart of the system.
 Data streams converge here, flowing in all directions.
 A large firewall pulses at the far end - blocking your escape`,
-      enterOther: "You return to the core system. DAta streams continue to pulse around you.",
+
+      enterOther: "You return to the core system. Data streams continue to pulse around you.",
+
       desc: `You stand within the central node of the network.
 Streams of data surge through glowing pathways, branching in every direction.
 
@@ -195,10 +200,10 @@ A translucent screen materialises in front of you.
 > OBJECTIVE: LOCATE ACCESS CODE TO BYPASS FIREWALL
 
 The firewall looms ahead - a barrier between you and escape.
-
-Other paths lead deeper into the system.
+Multiple paths extend deeper into the system.
 
 Paths detected: NORTH, EAST, SOUTH, WEST, FIREWALL`,
+
       exits: {
         north: "loopRoom",
         east: "logic",
@@ -207,31 +212,37 @@ Paths detected: NORTH, EAST, SOUTH, WEST, FIREWALL`,
         firewall: "firewall"
       }
     },
-    firewall: {
-      // enterFirst: ""
-      // enterOther: ""
-      desc: "> FIREWALL ACTIVE\n\nA glowing barrier blocks your exit from the system.\n\nBinary access code required.\n\nConvert the collected binary sequence into decimal.\n\nType: solve [decimal]",
-      exits: {
-        west: "core"
-      },
-      puzzle: {
-        type: "binary",
-        success: "exit"
-      }
-    },
     logic: {
-      // enterFirst: ""
-      // enterOther: ""
-      desc: "> LOGIC NODE\n\nA circuit forms in front of you...",
+      enterFirst: `> LOGIC NODE ACCESSED
+You step into a chamber filled with shifting data structures...
+Streams of binary cascade around you as a circuit begins to assemble itself.`,
+
+      enterOther: "You return to the logic node. The circuit begins forming again.",
+
+      desc: `A suspended logic circuit stabilises in front of you.
+Inputs feed into interconnected gates, each transforming the data as it flows through.
+The system requires a final output value.
+
+> EVALUATE LOGIC PATH TO DETERMINE OUTPUT
+
+Type: solve [0 or 1]`,
+      
       exits: {},
       puzzle: {
-        success: "firewall"
+        success: "core"
       }
-    },
+    },  
     loopRoom: {
-      // enterFirst: ""
-      // enterOther: ""
-      desc: "",
+      enterFirst: `You step into a quiet section of the system.
+The date streams here feel slower.
+Paths branch in all directions.`,
+
+      enterOther: "You return to the same quiet section. Something feels slightly off.",
+      
+      desc: `The environment here appears stable, but something isnt quite right.
+The same structures repeat around you, almost identically.
+
+Paths detected: NORTH, EAST, SOUTH, WEST`,
       exits: {
         north: "loop",
         east: "loop",
@@ -240,9 +251,22 @@ Paths detected: NORTH, EAST, SOUTH, WEST, FIREWALL`,
       }
     },   
     loop: {
-      // enterFirst: ""
-      // enterOther: ""
-      desc: "You walk forward..\n\nThe system flickers...\n\nYou are back where you started.\n\nPaths: NORTH, EAST, SOUTH, WEST",
+      enterFirst: `You walk forward.
+The system flickers briefly.
+You arrive somewhere... familiar.`,
+
+      enterOther: "You move again. The same space quietly reforms around you.",
+
+      desc: `The structures here look identical to where you just were.
+Data patterns repeat with unnatural precision.
+A faint distortion ripples through the environment.
+
+> SIGNAL INSTABILITY DETECTED
+
+You feel like you've already taken this path.
+
+Paths detected: NORTH, EAST, SOUTH, WEST`,
+
       exits: {
         north: "loop",
         east: "loop",
@@ -251,19 +275,63 @@ Paths detected: NORTH, EAST, SOUTH, WEST, FIREWALL`,
       },
       puzzle: {
         answer: "break",
-        success: "debug"
+        success: "core"
       }
     },
     debug: {
-      // enterFirst: ""
-      // enterOther: ""
-      desc: "> DEBUG TERMINAL\n\n> ERROR DETECTED\n\nCode snippet:\n\n total = num\n\nThe system is not accumulating values correctly.\n\nType: solve [code]",
+      enterFirst: `> DEBUG NODE ACCESSED
+You enter a corrupted section of the system.
+Fragments of code flicker in and out of existence.
+An unstable process is running here.`,
+
+      enterOther: "You return to the debug node. The corrupted code reappears.",
+
+      desc: `A block of code stablises in front of you.
+      
+>ERROR DETECTED: INCORRECT ACCUMULATION
+
+total = num
+
+The system is failing to accumulate values correctly.
+
+> IDENTIFY AND CORRECT THE ERROR
+
+Type: solve [code]`,
+
       exits: {},
       puzzle: {
         answer: "total += num",
-        success: "exit"
+        success: "core"
       }
     },
+    firewall: {
+      enterFirst: `> FIREWALL INTERFACE ACCESSED
+You approach the barrier blocking your escape.
+The system reacts immediately.
+A defensive protocol activates.`,
+
+      enterOther: "You return to the firewall. The barrier pulses, awaiting input.",
+
+      desc: `A glowing firewall stretches across your path.
+Data surges through it, rejecting anything that attempts to pass.
+
+> ACCESS CONTROL: ENABLED
+
+> AUTHORISATION REQUIRED
+
+A console materialises in front of you, awaiting input.
+Convert your collected binary fragments into a decimal value.
+
+> ENTER ACCESS CODE`,
+
+      exits: {
+        west: "core"
+      },
+      puzzle: {
+        type: "binary",
+        success: "exit"
+      }
+    },  
     exit: {
       desc: "> SYSTEM RESTORED\n\nAll errors resolved.\n\nYou feel your body reforming...\n\n> EXITING DIGITAL WORLD...\n\n🎉 You escaped the system!",
       exits: {},
