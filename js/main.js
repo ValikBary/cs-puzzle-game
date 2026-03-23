@@ -831,7 +831,6 @@ function Level4({ onComplete, onBack }) {
   const [loopCount, setLoopCount] = useState(0);
   const [logicPuzzle, setLogicPuzzle] = useState(null);
   const [binaryCode, setBinaryCode] = useState([]);
-  const [glitch, setGlitch] = useState[[]];
   const [visitedRooms, setVisitedRooms] = useState({});
   const [completedRooms, setCompletedRooms] = useState({});
   const CHAR_SPEED  = 35;
@@ -945,11 +944,6 @@ function glitchText(text) {
     .split("")
     .map(char => Math.random() < 0.1 ? "#" : char)
     .join("");
-}
-
-function triggerGlitch(duration = 200) {
-  setGlitch(true);
-  setTimeout(() => setGlitch(false), duration);
 }
 
   // TODO: Update navigation to use enterFirst / enterOther instead of always using desc
@@ -1076,7 +1070,6 @@ function triggerGlitch(duration = 200) {
                   addLine("> WARNING: RECURSIVE STATE CONFIRMED", "error");
                 }
                 if (newCount === 9) {
-                  triggerGlitch(300);
                   addLine("> SYSTEM ERROR: INFINITE LOOP", "error");
                 }
               }, 300);              
@@ -1188,7 +1181,6 @@ function triggerGlitch(duration = 200) {
             [room]: true
           }));
         } else {
-          triggerGlitch(300);
           addLine("❌ That doesn't break the loop.", "error");
           setScore(s => Math.max(0, s - 10));
         }
@@ -1201,7 +1193,6 @@ function triggerGlitch(duration = 200) {
         const binaryString = binaryCode.join("");
 
         if (binaryString.length < 3) {
-          triggerGlitch(300);
           addLine("❌ Not enough data fragments collected.", "error");
           return;
         }
@@ -1265,7 +1256,6 @@ function triggerGlitch(duration = 200) {
           
 
         } else {
-          triggerGlitch(300);
           addLine("❌ Incorrect solution. Try again.", "error");
           setScore(s => Math.max(0, s - 10));
         }
@@ -1325,7 +1315,7 @@ function triggerGlitch(duration = 200) {
         Escape the CS Dungeon! Type commands to navigate. Wrong commands cost points 💀
       </div>
 
-      <div className={`adventure-box ${glitch ? "glitch" : ""}`} ref={historyRef}>
+      <div className="adventure-box" ref={historyRef}>
         {displayedHistory.map((line, i) => (
           <div key={i} className={`adventure-line ${line.type}`} style={{ whiteSpace: "pre-wrap" }}>{line.text}</div>
         ))}
