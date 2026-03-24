@@ -233,9 +233,7 @@ Streams of binary cascade around you as a circuit begins to assemble itself.`,
 Inputs feed into interconnected gates, each transforming the data as it flows through.
 The system requires a final output value.
 
-> EVALUATE LOGIC PATH TO DETERMINE OUTPUT
-
-Type: solve [0 or 1]`,
+> EVALUATE LOGIC PATH TO DETERMINE OUTPUT`,
       
       exits: {},
       puzzle: {
@@ -830,6 +828,7 @@ function Level4({ onComplete, onBack }) {
   const inputRef = useRef(null);
   const [loopCount, setLoopCount] = useState(0);
   const [logicPuzzle, setLogicPuzzle] = useState(null);
+  const [logicStage, setLogicStage] = useState(1);
   const [binaryCode, setBinaryCode] = useState([]);
   const [glitch, setGlitch] = useState(false);
   const [visitedRooms, setVisitedRooms] = useState({});
@@ -913,12 +912,12 @@ function Level4({ onComplete, onBack }) {
   function loadNewRoom(text) {
     setDisplayedHistory([]);
 
-    addLine("> TRANSFERRING TO NEW NODE...", "system");
-
-    setTimeout(() => {
-      setDisplayedHistory([]);
-      addLine(text, "system");
-    }, 600);
+    return addLine("> TRANSFERRING TO NEW NODE...", "system")
+      .then(() => new Promise(r => setTimeout(r, 600)))
+      .then(() => {
+        setDisplayedHistory([]);
+        return addLine(text, "system");
+      });
   }
 
   function getRoomText(roomId) {
@@ -931,24 +930,50 @@ function Level4({ onComplete, onBack }) {
   }
 
 
+  // trial code to stop duplication
+  /*function enterRoom(roomId) {
+    const textToShow = getRoomText(nextId);
+    loadNewRoom(textToShow);
 
-  function generateLogicPuzzle() {
-    const gates = ["AND", "OR", "XOR", "NAND", "NOR"];
+    setVisitedRooms(prev => ({
+      ...prev,
+      [nextId]: true
+    }));
+  }*/
+
+  function generateLogicPuzzle(stage = 1) {
+    const gates = ["AND", "OR", "XOR", "NAND", "NOR"]; 
 
     const a = Math.round(Math.random());
     const b = Math.round(Math.random());
     const c = Math.round(Math.random());
+    const d = Math.round(Math.random());
 
     const gate1 = gates[Math.floor(Math.random() * gates.length)];
     const gate2 = gates[Math.floor(Math.random() * gates.length)];
+    const gate3 = gates[Math.floor(Math.random() * gates.length)];
 
+    if (stage === 1) {
+      const answer = computeGate(gate1, a, b);
+      return { stage, a, b, gate1, answer: String(answer) };
+    }
+
+    if (stage === 2) {
+      const step1 = computeGate(gate1, a, b);
+      const answer = computeGate(gate2, step1, c);
+      return { stage, a, b, c, gate1, gate2, answer: String(answer) };
+    }
+
+    // stage 3
     const step1 = computeGate(gate1, a, b);
-    const final = computeGate(gate2, step1, c);
+    const step2 = computeGate(gate2, c, d);
+    const answer = computeGate(gate3, step1, step2);
 
     return {
-      a, b, c,
-      gate1, gate2,
-      answer: String(final)
+      stage,
+      a, b, c, d,
+      gate1, gate2, gate3,
+      answer: String(answer)
     };
   }
 
@@ -1006,11 +1031,47 @@ function Level4({ onComplete, onBack }) {
     
     // LOOK
     } else if (raw === "look") {
-      addLine(currentRoom.desc, "system");
+      let diagram = "";
+      if (room === "logic" && logicPuzzle && logicPuzzle.stage > 1) {
+        if (logicPuzzle.stage === 2) {
+                diagram = `
+      ${logicPuzzle.a} ──┐
+          ${logicPuzzle.gate1} ───┐
+      ${logicPuzzle.b} ──┘      |
+                  ${logicPuzzle.gate2} ─── ?
+      ${logicPuzzle.c} ───────────┘
+      `;
+        }
+        if (logicPuzzle.stage === 3) {
+                diagram = `
+      ${logicPuzzle.a} ──┐
+          ${logicPuzzle.gate1} ───┐
+      ${logicPuzzle.b} ──┘      |
+                  ${logicPuzzle.gate3} ─── ?
+      ${logicPuzzle.c} ──┐      |
+          ${logicPuzzle.gate2} ───┘
+      ${logicPuzzle.d} ──┘
+      `;
+        }
+        return addLine(diagram + "\nType: solve [0 or 1]", "system");
+        
+      } else {
+        addLine(currentRoom.desc, "system")
+          .then(() => {
+            if (room === "logic" && logicPuzzle) {
+              if (logicPuzzle.stage === 1) {
+                diagram = `
+      ${logicPuzzle.a} ──┐
+          ${logicPuzzle.gate1} ─── ?
+      ${logicPuzzle.b} ──┘
+      `;
+              }           
 
-    // TODO: Replace desc with enterFirst / enterOther
-    // Need to track visited rooms
-    // TODO: Prevent access to firewall until binary fragments collected
+            return addLine(diagram + "\nType: solve [0 or 1]", "system");
+            }
+          });
+      }     
+
     // GO
     } else if (raw.startsWith("go ")) {
       const dir = raw.replace("go ", "").trim();
@@ -1045,28 +1106,19 @@ function Level4({ onComplete, onBack }) {
           }
 
         // LOGIC ROOM
-        // NOTE: Logic room overrides normal room text with generated puzzle UI
         } else if (nextId === "logic") {
           const textToShow = getRoomText(nextId);
-          loadNewRoom(textToShow);
+          loadNewRoom(textToShow)
+            .then (() => {
+              setVisitedRooms(prev => ({
+                ...prev,
+                [nextId]: true
+              }));
 
-          setVisitedRooms(prev => ({
-            ...prev,
-            [nextId]: true
-          }));
-
-          const newPuzzle = generateLogicPuzzle();
-          setLogicPuzzle(newPuzzle);
-
-          addLine(`            
-          ${newPuzzle.a} ──┐
-              ${newPuzzle.gate1} ──┐
-          ${newPuzzle.b} ──┘     │
-                    ${newPuzzle.gate2} ── ?
-          ${newPuzzle.c} ─────────┘
-
-          Type: solve [0 or 1]
-          `, "system");
+              // generate puzzle BUT DO NOT SHOW
+              const newPuzzle = generateLogicPuzzle();
+              setLogicPuzzle(newPuzzle);
+            });          
 
         // LOOP ROOM
         } else if (nextId === "loopRoom") {
@@ -1096,6 +1148,7 @@ function Level4({ onComplete, onBack }) {
 
               setTimeout(() => {
                 if (newCount === 3) {
+                  triggerGlitch(1000)
                   addLine("> SIGNAL INSTABILITY DETECTED", "error");
                 }
                 if (newCount === 5) {
@@ -1111,7 +1164,7 @@ function Level4({ onComplete, onBack }) {
                   triggerGlitch(300);
                   addLine(glitchText("> SYSTEM ERROR: INFINITE LOOP", 0.35), "error");
                 }
-              }, 300);              
+              }, 1000);              
               return newCount
             });
           } else {
@@ -1146,7 +1199,49 @@ function Level4({ onComplete, onBack }) {
       // LOGIC ROOM SPECIAL HANDLING
       if (room === "logic" && logicPuzzle) {
         if (answer === logicPuzzle.answer) {
+          // STAGE COMPLETE
+          if (logicStage < 3) {
+            addLine("✅ Correct — advancing to next stage...", "success");
+
+            const nextStage = logicStage + 1;
+            setLogicStage(nextStage);
+
+            const newPuzzle = generateLogicPuzzle(nextStage);
+            setLogicPuzzle(newPuzzle);
+
+            addLine(`> STAGE ${nextStage}/3`, "system");
+            return;              
+          }
+
+          // FINAL STAGE COMPLETE
+          addLine("✅ All curcuits solved!", "success");
+
           const nextRoom = ADVENTURE.rooms[currentRoom.puzzle.success];
+          const bit = ROOM_BITS[room] ?? Math.round(Math.random());
+
+          setRoom(currentRoom.puzzle.success);
+
+          setBinaryCode(prev => {
+            const updated = [...prev, bit];
+            addLine(`> DATA FRAGMENT ACQUIRED: ${bit}`, "systems");
+            addLine("", "system"); // spacer
+            addLine(`> CURRENT CODE: ${updated.join("")}`, "systems");
+            return updated;
+          });
+
+          setCompletedRooms( prev => ({
+            ...prev,
+            [room]: true
+          }));
+
+          setTimeout(() => {
+            setDisplayedHistory([]);
+            const textToShow = getRoomText(nextId);
+            loadNewRoom(textToShow);;
+          }, 2000);
+
+
+          /*const nextRoom = ADVENTURE.rooms[currentRoom.puzzle.success];
           const bit = ROOM_BITS[room] ?? Math.round(Math.random());
 
           setRoom(currentRoom.puzzle.success);
@@ -1160,8 +1255,8 @@ function Level4({ onComplete, onBack }) {
                 addLine(`> CURRENT CODE: ${updated.join("")}`, "system");
                 return updated;
               })
-            })
-            .then(() => addLine("> PROCESSING...", "system"))
+            })*/
+            /*.then(() => addLine("> PROCESSING...", "system")) Not sure if i need this bit
             .then(() => new Promise(r => setTimeout(r, 2000)))
             .then(() => {
               setDisplayedHistory([]);
@@ -1171,10 +1266,11 @@ function Level4({ onComplete, onBack }) {
             setCompletedRooms(prev => ({
               ...prev,
               [room]: true
-            }));
+            }));*/
 
         } else {
-          addLine(`❌ Incorrect — evaluate ${logicPuzzle.gate1} then ${logicPuzzle.gate2}`, "error");
+          addLine("❌ Incorrect - try again.", "error");
+          //addLine(`❌ Incorrect — evaluate ${logicPuzzle.gate1} then ${logicPuzzle.gate2}`, "error");
           addLine("💡 AND=both 1 | OR=any 1 | XOR=different | NAND=NOT AND | NOR=NOT OR", "system");
           setScore(s => Math.max(0, s - 10));
         }
@@ -1214,7 +1310,7 @@ function Level4({ onComplete, onBack }) {
               });
             })
             .then(() => new Promise(r => setTimeout(r, 800)))
-            .then(() => addLine(nextRoom.desc, "system"));
+            .then(() => addLine(nextRoom.enterOther, "system"));
           setCompletedRooms(prev => ({
             ...prev,
             [room]: true
@@ -1252,7 +1348,7 @@ function Level4({ onComplete, onBack }) {
             .then(() => new Promise(r => setTimeout(r, 800)))
             .then(() => {
               setDisplayedHistory([]);
-              return addLine(nextRoom.desc, "system");
+              return addLine(nextRoom.enterFirst, "system");
             })
         } else {
           addLine(`❌ Incorrect. Hint: ${binaryString} (binary) → ? (decimal)`, "error");
@@ -1287,7 +1383,7 @@ function Level4({ onComplete, onBack }) {
           .then(() => new Promise(r => setTimeout(r, 2000)))
           .then(() => {
             setDisplayedHistory([]);
-            return addLine(nextRoom.desc, "system");
+            return addLine(nextRoom.enterOther, "system");
           });
 
           setCompletedRooms(prev => ({
