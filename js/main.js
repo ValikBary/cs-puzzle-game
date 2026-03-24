@@ -220,8 +220,7 @@ Paths detected: NORTH, EAST, SOUTH, WEST, FIREWALL`,
         firewall: "firewall"
       }
     },
-
-    // TODO: Add multiple logic puzzles with increasing difficulty
+    
     logic: {
       enterFirst: `> LOGIC NODE ACCESSED
 You step into a chamber filled with shifting data structures...
@@ -878,7 +877,17 @@ function Level4({ onComplete, onBack }) {
           function typeChar() {
             charIndex++;
 
-            currentText += currentLine[charIndex - 1] || "";
+            //currentText += currentLine[charIndex - 1] || "";
+            const nextChar = currentLine[charIndex - 1] || "";
+
+            // APPLY GLITCH DURING TYPING
+            if (glitch && Math.random() < 0.15) {
+              const glitchChars = "!@#$%^&*<>?/[]{}";
+              currentText = glitchText(currentText, 0.5);
+              currentText += glitchChars[Math.floor(Math.random() * glitchChars.length)];
+            } else {
+              currentText += nextChar || "";
+            }
 
             setDisplayedHistory(h => {
               const updated = [...h];
@@ -1159,19 +1168,14 @@ function Level4({ onComplete, onBack }) {
             [nextId]: true
           }));
 
-          loadNewRoom(textToShow);
+          // LOOP TRACKING
+          loadNewRoom(textToShow).then(() => {
+            if (nextId === "loop" || nextId === "loopRoom") {
+              setLoopCount(c => {
+                const newCount = c + 1;
 
-          
-        }
-
-        // LOOP TRACKING
-        if (nextId === "loop" || nextId === "loopRoom") {
-            setLoopCount(c => {
-              const newCount = c + 1;
-
-              setTimeout(() => {
                 if (newCount === 3) {
-                  triggerGlitch(1000)
+                  triggerGlitch(1500);
                   addLine("> SIGNAL INSTABILITY DETECTED", "error");
                 }
                 if (newCount === 5) {
@@ -1181,18 +1185,65 @@ function Level4({ onComplete, onBack }) {
                   addLine("> HINT: NOT ALL PATHS REQUIRE MOVEMENT", "system");
                 }
                 if (newCount === 7) { 
-                  addLine(glitchText("> WARNING: RECURSIVE STATE CONFIRMED", 0.2), "error");
+                  addLine(glitchText("> WARNING: RECURSIVE STATE CONFIRMED", 0.12), "error");
                 }
                 if (newCount === 9) {
-                  triggerGlitch(300);
-                  addLine(glitchText("> SYSTEM ERROR: INFINITE LOOP", 0.35), "error");
+                  setLocked(true);
+
+                  triggerGlitch(2000);
+
+                  addLine(glitchText("> SYSTEM ERROR: INFINITE LOOP", 0.2), "error")
+                    .then(() => addLine(glitchText("> CRITICLA FAILURE DETECTED", 0.3), "error"))
+                    .then(() => new Promise(r => setTimeout(r, 500)))
+
+                  // spam glitch lines
+                    .then(() => addLine(glitchText("> @~$% MEMORY CORRUPTION %$#@", 0.4), "error"))
+                    .then(() => addLine(glitchText("> STACK OVERFLOW >>>>>>>>>"), "error"))
+                    .then(() => addLine(glitchText("> NULL POINTER EXCEPTION", 0.5), "error"))
+
+                    .then(() => new Promise(r => setTimeout(r, 800)))
+
+                  // FULL SCREEN WIPE
+                    .then(() => {
+                      setDisplayedHistory([]);
+                      triggerGlitch(1500);
+                      return addLine("> !!! SYSTEM COLLAPSE", "error");
+                    })
+
+                    .then(() => new Promise(r => setTimeout(r, 1000)))
+
+                  // reboot sequence
+                    .then(() => {
+                      setDisplayedHistory([]);
+                      return addLine("> REBOOTING SYSTEM...", "system")
+                        .then(() => addLine("> WARNING: LOOP INSTABILITY RESOLVED", "system"));
+                    })
+                    .then(() => new Promise(r => setTimeout(r, 1200)))
+
+                  // return to core
+                    .then(() => {
+                      const nextRoomId = "core";
+                      setRoom(nextRoomId);
+
+                      const textToShow = getRoomText(nextRoomId);
+
+                      return loadNewRoom(textToShow);
+                    })
+
+                    .then(() => {
+                      setLoopCount(0);
+                      setLocked(false);
+                    });
+
                 }
-              }, 1000);              
-              return newCount
-            });
-          } else {
-            setLoopCount(0);
-          }
+
+                return newCount;
+              });
+            } else {
+              setLoopCount(0);
+            }
+          });          
+        }
 
         // ── WIN CHECK ──────────────────
         if (nextRoom.win) {
@@ -1246,7 +1297,7 @@ function Level4({ onComplete, onBack }) {
 
               setRoom(nextRoomId);
 
-              return addLine(`> DATA FRAGMENT ACQUIRED: ${bit}`, "system ")
+              return addLine(`> DATA FRAGMENT ACQUIRED: ${bit}`, "system")
                 .then(() => {
                   setBinaryCode(prev => {
                     const updated = [...prev, bit];
@@ -1464,7 +1515,7 @@ function Level4({ onComplete, onBack }) {
         Escape the CS Dungeon! Type commands to navigate. Wrong commands cost points 💀
       </div>
 
-      <div className="adventure-box" ref={historyRef}>
+      <div className={`adventure-box ${glitch ? "glitch" : ""}`} ref={historyRef}>
         {displayedHistory.map((line, i) => (
           <div key={i} className={`adventure-line ${line.type}`} style={{ whiteSpace: "pre-wrap" }}>{line.text}</div>
         ))}

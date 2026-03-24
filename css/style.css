@@ -478,7 +478,7 @@ body::before {
 }
 
 .glitch {
-  animation: glitch 0.2s;
+  animation: glitch 0.15s linear 3;
 }
 
 @keyframes glitch {
