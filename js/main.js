@@ -1467,13 +1467,6 @@ function Level4({ onComplete, onBack }) {
     return 0; // crash (loop 9)
   }
 
-  function getLoopBits(loopCount) {
-    if (loopCount <= 3) return 3; // fast escape
-    if (loopCount <= 6) return 2; // medium
-    if (loopCount <= 8) return 1; // slow
-    return 0; // crash (loop 9)
-  }
-
   function computeGate(gate, a, b) {
     switch (gate) {
       case "AND":
