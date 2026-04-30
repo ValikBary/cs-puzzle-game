@@ -1968,7 +1968,6 @@ function generateDebugPuzzle(stage = 1) {
         }
 
         return;
-
       }
       
       // DEBUG ROOM
