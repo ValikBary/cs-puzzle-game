@@ -1952,7 +1952,6 @@ function generateDebugPuzzle(stage = 1) {
               const nextRoom = ADVENTURE.rooms[currentRoom.puzzle.success];
               setRoom(currentRoom.puzzle.success);
               return loadNewRoom(nextRoom.desc);
-              return loadNewRoom(nextRoom.desc);
             });
         } else {
           // SMART FEEDBACK
