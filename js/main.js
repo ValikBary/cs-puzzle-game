@@ -1900,9 +1900,7 @@ function generateDebugPuzzle(stage = 1) {
         }
 
         return;
-      }
-
-      
+      }      
 
       // FIREWALL
       if (room === "firewall") {
