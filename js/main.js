@@ -1,10 +1,106 @@
-
 // =============================================
 // CS PUZZLE GAME - Main React App
 // Team: Valik, Simon, Fred
 // =============================================
 
 const { useState, useEffect, useRef } = React;
+
+// ── SOUND ENGINE
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+
+function getCtx() {
+  if (!audioCtx) audioCtx = new AudioCtx();
+  return audioCtx;
+}
+
+function playSound(type) {
+  try {
+    const ctx = getCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if (type === "correct") {
+      osc.frequency.setValueAtTime(520, ctx.currentTime);
+      osc.frequency.setValueAtTime(660, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.4);
+    } else if (type === "wrong") {
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(200, ctx.currentTime);
+      osc.frequency.setValueAtTime(150, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.3);
+    } else if (type === "achievement") {
+      [523, 659, 784, 1047].forEach((freq, i) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.connect(g);
+        g.connect(ctx.destination);
+        o.frequency.value = freq;
+        g.gain.setValueAtTime(0.25, ctx.currentTime + i * 0.12);
+        g.gain.exponentialRampToValueAtTime(
+          0.001,
+          ctx.currentTime + i * 0.12 + 0.3,
+        );
+        o.start(ctx.currentTime + i * 0.12);
+        o.stop(ctx.currentTime + i * 0.12 + 0.3);
+      });
+    } else if (type === "click") {
+      osc.frequency.value = 800;
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.08);
+    }
+  } catch (e) {}
+}
+
+// ── ACHIEVEMENTS ──────────────────────────────
+const ACHIEVEMENTS = [
+  {
+    id: "first_blood",
+    icon: "🩸",
+    title: "First Blood",
+    desc: "Got your first correct answer",
+  },
+  {
+    id: "no_mistakes_1",
+    icon: "🎯",
+    title: "Sharpshooter",
+    desc: "Completed If/Else with no wrong answers",
+  },
+  {
+    id: "no_mistakes_2",
+    icon: "⚡",
+    title: "Logic Lord",
+    desc: "Completed Logic Gates with no mistakes",
+  },
+  {
+    id: "no_mistakes_3",
+    icon: "🐛",
+    title: "Exterminator",
+    desc: "Found all bugs on first try",
+  },
+  {
+    id: "escapee",
+    icon: "🚀",
+    title: "Escapee",
+    desc: "Escaped the CS Dungeon",
+  },
+  {
+    id: "all_levels",
+    icon: "🏆",
+    title: "CS Master",
+    desc: "Completed all 4 levels",
+  },
+];
 
 // ── LEVEL DATA ────────────────────────────────
 const LEVELS = [
@@ -40,7 +136,6 @@ const LEVELS = [
     color: "#7fff00",
     difficulty: "Hard",
   },
-  
 ];
 
 // ── LEVEL 1 – IF/ELSE QUESTIONS ───────────────
@@ -85,7 +180,12 @@ const IF_ELSE_QUESTIONS = [
       { text: '  print("It is dark!")', type: "normal" },
     ],
     blanks: [""],
-    options: ["lights_on == True", "lights_on", "not lights_on", "lights_on > 0"],
+    options: [
+      "lights_on == True",
+      "lights_on",
+      "not lights_on",
+      "lights_on > 0",
+    ],
     correctAnswers: ["lights_on == True", "lights_on"],
     explanation:
       "lights_on is False, so the condition fails and we get 'It is dark!'. Both 'lights_on == True' and 'lights_on' are valid ways to check a boolean!",
@@ -94,24 +194,61 @@ const IF_ELSE_QUESTIONS = [
 
 // ── LEVEL 2 – LOGIC GATES ─────────────────────
 const GATE_PUZZLES = [
-  { a: 1, b: 1, target: 1, correct: "AND",  hint: "AND outputs 1 only when BOTH inputs are 1" },
-  { a: 1, b: 0, target: 1, correct: "OR",   hint: "OR outputs 1 when AT LEAST ONE input is 1" },
-  { a: 0, b: 0, target: 1, correct: "NOR",  hint: "NOR is the opposite of OR — outputs 1 only when both are 0" },
-  { a: 1, b: 1, target: 0, correct: "XOR",  hint: "XOR outputs 1 only when inputs are DIFFERENT" },
-  { a: 0, b: 1, target: 0, correct: "AND",  hint: "AND needs BOTH inputs to be 1. Here one is 0, so output is 0" },
+  {
+    a: 1,
+    b: 1,
+    target: 1,
+    correct: "AND",
+    hint: "AND outputs 1 only when BOTH inputs are 1",
+  },
+  {
+    a: 1,
+    b: 0,
+    target: 1,
+    correct: "OR",
+    hint: "OR outputs 1 when AT LEAST ONE input is 1",
+  },
+  {
+    a: 0,
+    b: 0,
+    target: 1,
+    correct: "NOR",
+    hint: "NOR is the opposite of OR — outputs 1 only when both are 0",
+  },
+  {
+    a: 1,
+    b: 1,
+    target: 0,
+    correct: "XOR",
+    hint: "XOR outputs 1 only when inputs are DIFFERENT",
+  },
+  {
+    a: 0,
+    b: 1,
+    target: 0,
+    correct: "AND",
+    hint: "AND needs BOTH inputs to be 1. Here one is 0, so output is 0",
+  },
 ];
 
 const GATE_TYPES = ["AND", "OR", "NOT", "XOR", "NAND", "NOR"];
 
 function computeGate(gate, a, b) {
   switch (gate) {
-    case "AND":  return a & b;
-    case "OR":   return a | b;
-    case "NOT":  return a === 1 ? 0 : 1;
-    case "XOR":  return a ^ b;
-    case "NAND": return (a & b) === 1 ? 0 : 1;
-    case "NOR":  return (a | b) === 1 ? 0 : 1;
-    default:     return 0;
+    case "AND":
+      return a & b;
+    case "OR":
+      return a | b;
+    case "NOT":
+      return a === 1 ? 0 : 1;
+    case "XOR":
+      return a ^ b;
+    case "NAND":
+      return (a & b) === 1 ? 0 : 1;
+    case "NOR":
+      return (a | b) === 1 ? 0 : 1;
+    default:
+      return 0;
   }
 }
 
@@ -123,7 +260,10 @@ const DEBUG_PUZZLES = [
       { code: "numbers = [1, 2, 3, 4, 5]", bug: false },
       { code: "total = 0", bug: false },
       { code: "for num in numbers:", bug: false },
-      { code: "    total = num          # ← this line replaces instead of adds!", bug: true },
+      {
+        code: "    total = num          # ← this line replaces instead of adds!",
+        bug: true,
+      },
       { code: "print('Sum:', total)", bug: false },
     ],
     bugLine: 3,
@@ -170,7 +310,7 @@ const DEBUG_PUZZLES = [
 // exits -> available directions
 // puzzle -> optional puzzle for the room
 
-const binCode = ""
+const binCode = "";
 const ADVENTURE = {
   start: "room1",
   rooms: {
@@ -184,15 +324,16 @@ A platform of energy stabilises beneath your feet, holding your form together.
 > WARNING: CONSCIOUSNESS TRANSFER UNSTABLE
 > USER SUCCESSFULLY DIGITISED`,
 
-      enterOther: "You return to the digitising platform. The system hums quietly around you.",
+      enterOther:
+        "You return to the digitising platform. The system hums quietly around you.",
 
       desc: `Streams of data pulse through the walls like veins of light.
 This is where you entered the system.
 A single pathway leads deeper into the network.
       
-Paths detected: EAST.`,
-      exits: { 
-        east: "core"
+Paths detected: NORTH.`,
+      exits: {
+        north: "core",
       },
     },
     // CORE
@@ -202,7 +343,8 @@ You step into the heart of the system.
 Data streams converge here, flowing in all directions.
 A large firewall pulses at the far end - blocking your escape`,
 
-      enterOther: "You return to the core system. Data streams continue to pulse around you.",
+      enterOther:
+        "You return to the core system. Data streams continue to pulse around you.",
 
       desc: `You stand within the central node of the network.
 Streams of data surge through glowing pathways, branching in every direction.
@@ -221,8 +363,8 @@ Paths detected: NORTH, EAST, SOUTH, WEST, FIREWALL`,
         east: "logic",
         south: "debug",
         west: "room1",
-        firewall: "firewall"
-      }
+        firewall: "firewall",
+      },
     },
     // LOGIC
     logic: {
@@ -230,28 +372,30 @@ Paths detected: NORTH, EAST, SOUTH, WEST, FIREWALL`,
 You step into a chamber filled with shifting data structures...
 Streams of binary cascade around you as a circuit begins to assemble itself.`,
 
-      enterOther: "You return to the logic node. The circuit begins forming again.",
+      enterOther:
+        "You return to the logic node. The circuit begins forming again.",
 
       desc: `A suspended logic circuit stabilises in front of you.
 Inputs feed into interconnected gates, each transforming the data as it flows through.
 The system requires a final output value.
 
 > EVALUATE LOGIC PATH TO DETERMINE OUTPUT`,
-      
+
       exits: {},
       puzzle: {
-        success: "core"
-      }
+        success: "core",
+      },
     },
-    
+
     // LOOP ROOM
     loopRoom: {
       enterFirst: `You step into a quiet section of the system.
 The data streams here feel slower.
 Paths branch in all directions.`,
 
-      enterOther: "You return to the same quiet section. Something feels slightly off.",
-      
+      enterOther:
+        "You return to the same quiet section. Something feels slightly off.",
+
       desc: `The environment here appears stable, but something isn't quite right.
 The same structures repeat around you, almost identically.
 
@@ -261,9 +405,9 @@ Paths detected: NORTH, EAST, SOUTH, WEST`,
         east: "loop",
         south: "loop",
         west: "loop",
-      }
+      },
     },
-    
+
     // LOOP
     loop: {
       enterFirst: `You walk forward.
@@ -290,8 +434,8 @@ Paths detected: NORTH, EAST, SOUTH, WEST`,
       },
       puzzle: {
         answer: "break",
-        success: "core"
-      }
+        success: "core",
+      },
     },
 
     // TODO: Expand debug room to multiple sequential problems
@@ -319,8 +463,8 @@ Type: solve [code]`,
       exits: {},
       puzzle: {
         answer: "total += num",
-        success: "core"
-      }
+        success: "core",
+      },
     },
 
     // FIREWALL
@@ -334,7 +478,8 @@ The system reacts immediately.
 
 The firewall pulses violently, resisting access.`,
 
-      enterOther: "You return to the firewall. The barrier pulses, awaiting input.",
+      enterOther:
+        "You return to the firewall. The barrier pulses, awaiting input.",
 
       desc: `A massive firewall blocks your exit.
 Streams of encrypted data surge across its surface.
@@ -350,20 +495,20 @@ Your collected binary fragments must be converted into a decimal key.
 Type: solve [decimal]`,
 
       exits: {
-        west: "core"
+        west: "core",
       },
       puzzle: {
         type: "binary",
-        success: "exit"
-      }
+        success: "exit",
+      },
     },
-    
+
     // EXIT
     exit: {
       desc: "> SYSTEM RESTORED\n\nAll errors resolved.\n\nYou feel your body reforming...\n\n> EXITING DIGITAL WORLD...\n\n🎉 You escaped the system!",
       exits: {},
-      win: true
-    },    
+      win: true,
+    },
   },
 };
 
@@ -373,16 +518,65 @@ Type: solve [decimal]`,
 const ROOM_BITS = {
   loop: 1,
   debug: 0,
-  logic: 1
+  logic: 1,
 };
-
 
 // ══════════════════════════════════════════════
 // COMPONENTS
 // ══════════════════════════════════════════════
 
+// ── ACHIEVEMENT TOAST ─────────────────────────
+function AchievementToast({ achievement, onDone }) {
+  useEffect(() => {
+    playSound("achievement");
+    const t = setTimeout(onDone, 3500);
+    return () => clearTimeout(t);
+  }, []);
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        bottom: 24,
+        right: 24,
+        zIndex: 9999,
+        background: "linear-gradient(135deg, #1a1a2e, #16213e)",
+        border: "1px solid var(--accent3)",
+        borderRadius: 12,
+        padding: "14px 20px",
+        boxShadow: "0 0 24px rgba(255,214,10,0.3)",
+        display: "flex",
+        alignItems: "center",
+        gap: 14,
+        animation: "slideIn 0.4s ease",
+        maxWidth: 300,
+      }}
+    >
+      <div style={{ fontSize: "2rem" }}>{achievement.icon}</div>
+      <div>
+        <div
+          style={{
+            fontSize: "0.65rem",
+            color: "var(--accent3)",
+            letterSpacing: 2,
+            marginBottom: 2,
+          }}
+        >
+          ACHIEVEMENT UNLOCKED
+        </div>
+        <div style={{ fontSize: "0.95rem", fontWeight: 700, color: "#fff" }}>
+          {achievement.title}
+        </div>
+        <div style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>
+          {achievement.desc}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── HOME SCREEN ───────────────────────────────
-function HomeScreen({ completedLevels, scores, onSelectLevel }) {
+function HomeScreen({ completedLevels, scores, onSelectLevel, unlockedAchievements }) {
   return (
     <div className="screen">
       <div style={{ marginBottom: 8 }}>
@@ -391,7 +585,9 @@ function HomeScreen({ completedLevels, scores, onSelectLevel }) {
         </div>
       </div>
       <div className="home-title">
-        CS PUZZLE<br />GAME <span className="blinking-cursor" />
+        CS PUZZLE
+        <br />
+        GAME <span className="blinking-cursor" />
       </div>
       <div className="home-subtitle" style={{ marginBottom: 0 }}>
         Learn Computer Science by Playing
@@ -403,53 +599,102 @@ function HomeScreen({ completedLevels, scores, onSelectLevel }) {
           return (
             <div
               key={lvl.id}
-              
               className="level-card"
-              style={{ "--card-color": lvl.color }}      
+              style={{ "--card-color": lvl.color }}
               onClick={() => onSelectLevel(lvl.id)}
-            >              
+            >
               <div className="level-num">
-                LEVEL {lvl.id} · {lvl.difficulty === "Easy" ? "🟢 Easy" : lvl.difficulty === "Medium" ? "🟡 Medium" : "🔴 Hard"}
+                LEVEL {lvl.id} ·{" "}
+                {lvl.difficulty === "Easy"
+                  ? "🟢 Easy"
+                  : lvl.difficulty === "Medium"
+                    ? "🟡 Medium"
+                    : "🔴 Hard"}
               </div>
               <div className="level-icon">{lvl.icon}</div>
               <div className="level-name">{lvl.name}</div>
               <div className="level-desc">{lvl.desc}</div>
               {done && (
-                <div className="level-badge" title="Completed!">✅</div>
-              )}              
+                <div className="level-badge" title="Completed!">
+                  ✅
+                </div>
+              )}
               {scores[lvl.id] != null && (
-                <div style={{ marginTop: 10, fontSize: "0.7rem", color: lvl.color }}>
+                <div
+                  style={{
+                    marginTop: 10,
+                    fontSize: "0.7rem",
+                    color: lvl.color,
+                  }}
+                >
                   Best: {scores[lvl.id]} pts
                 </div>
               )}
             </div>
           );
         })}
-      </div>      
-      <div style={{ fontSize: "0.72rem", color: "var(--text-dim)", textAlign: "center" }}>
+      </div>
+      <div
+        style={{
+          fontSize: "0.72rem",
+          color: "var(--text-dim)",
+          textAlign: "center",
+        }}
+      >
         Play any level — explore different Computer Science concepts 🚀
       </div>
+      {/* ── ACHIEVEMENTS ── */}
+      {unlockedAchievements.length > 0 && (
+        <div style={{ marginTop: 32 }}>
+          <div style={{ fontSize: "0.7rem", color: "var(--text-dim)", letterSpacing: 2, marginBottom: 12, textAlign: "center" }}>
+            YOUR ACHIEVEMENTS
+          </div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
+            {ACHIEVEMENTS.map(a => (
+              <div key={a.id} title={a.desc} style={{
+                fontSize: "1.6rem",
+                opacity: unlockedAchievements.includes(a.id) ? 1 : 0.2,
+                filter: unlockedAchievements.includes(a.id) ? "none" : "grayscale(1)",
+                cursor: "default",
+                transition: "all 0.3s"
+              }}>
+                {a.icon}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 // ── LEVEL 1 – IF/ELSE ─────────────────────────
-function Level1({ onComplete, onBack }) {
+function Level1({ onComplete, onBack, onAchievement }) {
   const [qIdx, setQIdx] = useState(0);
   const [selected, setSelected] = useState(null);
   const [answered, setAnswered] = useState(false);
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
+  const [mistakes, setMistakes] = useState(0); // ── NEW
+  const [firstCorrect, setFirstCorrect] = useState(false); // ── NEW
 
   const q = IF_ELSE_QUESTIONS[qIdx];
-  const progress = ((qIdx) / IF_ELSE_QUESTIONS.length) * 100;
+  const progress = (qIdx / IF_ELSE_QUESTIONS.length) * 100;
 
   function choose(opt) {
     if (answered) return;
+    playSound(q.correctAnswers.includes(opt) ? "correct" : "wrong"); // ── NEW
     setSelected(opt);
     setAnswered(true);
     if (q.correctAnswers.includes(opt)) {
-      setScore(s => s + 100);
+      setScore((s) => s + 100);
+      // ── First Blood achievement ──
+      if (!firstCorrect) {
+        setFirstCorrect(true);
+        onAchievement("first_blood");
+      }
+    } else {
+      setMistakes((m) => m + 1); // ── NEW
     }
   }
 
@@ -457,7 +702,7 @@ function Level1({ onComplete, onBack }) {
     if (qIdx + 1 >= IF_ELSE_QUESTIONS.length) {
       setDone(true);
     } else {
-      setQIdx(i => i + 1);
+      setQIdx((i) => i + 1);
       setSelected(null);
       setAnswered(false);
     }
@@ -472,14 +717,27 @@ function Level1({ onComplete, onBack }) {
         <div className="victory-card">
           <div className="victory-title">LEVEL COMPLETE!</div>
           <div className="stars">{stars}</div>
-          <div style={{ color: "var(--text-dim)", marginBottom: 8 }}>If / Else mastered</div>
+          <div style={{ color: "var(--text-dim)", marginBottom: 8 }}>
+            If / Else mastered
+          </div>
           <div className="victory-score">{score} pts</div>
-          <div style={{ color: "var(--text-dim)", fontSize: "0.8rem", marginBottom: 24 }}>
+          <div
+            style={{
+              color: "var(--text-dim)",
+              fontSize: "0.8rem",
+              marginBottom: 24,
+            }}
+          >
             You correctly matched boolean conditions to expected outputs 🎉
           </div>
           <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-            <button className="btn btn-ghost" onClick={onBack}>← Menu</button>
-            <button className="btn btn-primary" onClick={() => onComplete(score)}>
+            <button className="btn btn-ghost" onClick={onBack}>
+              ← Menu
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={() => onComplete(score, mistakes)}
+            >
               Next Level →
             </button>
           </div>
@@ -491,7 +749,13 @@ function Level1({ onComplete, onBack }) {
   return (
     <div className="game-screen">
       <div className="game-header">
-        <button className="btn btn-ghost" style={{ padding: "6px 12px", fontSize: "0.7rem" }} onClick={onBack}>← Back</button>
+        <button
+          className="btn btn-ghost"
+          style={{ padding: "6px 12px", fontSize: "0.7rem" }}
+          onClick={onBack}
+        >
+          ← Back
+        </button>
         <div className="level-tag">LEVEL 1</div>
         <div className="game-title">If / Else</div>
         <div className="score-display">{score} pts</div>
@@ -501,21 +765,23 @@ function Level1({ onComplete, onBack }) {
       </div>
 
       <div className="info-box">
-        Question {qIdx + 1} of {IF_ELSE_QUESTIONS.length} — Fill in the blank to make the code work correctly
+        Question {qIdx + 1} of {IF_ELSE_QUESTIONS.length} — Fill in the blank to
+        make the code work correctly
       </div>
 
       <div className="code-block">
         <div style={{ height: 20 }} />
         {q.code.map((line, i) => {
-          if (line.type === "blank-line") return <div key={i} style={{ height: 4 }} />;
+          if (line.type === "blank-line")
+            return <div key={i} style={{ height: 4 }} />;
           if (line.type === "has-blank") {
             const parts = line.text.split("_____");
             return (
               <div className="code-line" key={i}>
-                <span className="kw">{parts[0].includes("if") ? "if " : parts[0]}</span>
-                <span className="blank">
-                  {selected || "?"}
+                <span className="kw">
+                  {parts[0].includes("if") ? "if " : parts[0]}
                 </span>
+                <span className="blank">{selected || "?"}</span>
                 <span>{parts[1]}</span>
               </div>
             );
@@ -525,9 +791,12 @@ function Level1({ onComplete, onBack }) {
               <span
                 dangerouslySetInnerHTML={{
                   __html: line.text
-                    .replace(/(if|else|print|True|False|and|or|not)/g, '<span class="kw">$1</span>')
-                    .replace(/(".*?")/g, '<span class="str">$1</span>')
-                    .replace(/(\d+)/g, '<span class="num">$1</span>'),
+                    .replace(
+                      /(if|else|print|True|False|and|or|not)/g,
+                      "<span class='kw'>$1</span>",
+                    )
+                    .replace(/(".*?")/g, "<span class='str'>$1</span>")
+                    .replace(/(\d+)/g, "<span class='num'>$1</span>"),
                 }}
               />
             </div>
@@ -535,7 +804,10 @@ function Level1({ onComplete, onBack }) {
         })}
       </div>
 
-      <div className="hint-text">💡 Pick the condition that goes inside the <span style={{ color: "var(--accent)" }}>if</span> statement:</div>
+      <div className="hint-text">
+        💡 Pick the condition that goes inside the{" "}
+        <span style={{ color: "var(--accent)" }}>if</span> statement:
+      </div>
 
       <div className="options-grid">
         {q.options.map((opt) => {
@@ -555,12 +827,17 @@ function Level1({ onComplete, onBack }) {
       {answered && (
         <div className={`feedback-box ${isCorrect ? "correct" : "wrong"}`}>
           <strong>{isCorrect ? "✅ Correct!" : "❌ Not quite!"}</strong>
-          <br />{q.explanation}
+          <br />
+          {q.explanation}
         </div>
       )}
 
       {answered && (
-        <button className="btn btn-primary" onClick={next} style={{ alignSelf: "flex-end" }}>
+        <button
+          className="btn btn-primary"
+          onClick={next}
+          style={{ alignSelf: "flex-end" }}
+        >
           {qIdx + 1 >= IF_ELSE_QUESTIONS.length ? "See Results →" : "Next →"}
         </button>
       )}
@@ -575,22 +852,25 @@ function Level2({ onComplete, onBack }) {
   const [answered, setAnswered] = useState(false);
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
+  const [mistakes, setMistakes] = useState(0);
 
   const p = GATE_PUZZLES[pIdx];
   const output = computeGate(selectedGate, p.a, p.b);
   const isCorrect = output === p.target;
 
-  function check() {
-    if (answered) return;
-    setAnswered(true);
-    if (isCorrect) setScore(s => s + 100);
-  }
+ function check() {
+  if (answered) return;
+  playSound(isCorrect ? "correct" : "wrong"); 
+  setAnswered(true);
+  if (isCorrect) setScore(s => s + 100);
+  else setMistakes(m => m + 1);
+}
 
   function next() {
     if (pIdx + 1 >= GATE_PUZZLES.length) {
       setDone(true);
     } else {
-      setPIdx(i => i + 1);
+      setPIdx((i) => i + 1);
       setSelectedGate("AND");
       setAnswered(false);
     }
@@ -603,14 +883,30 @@ function Level2({ onComplete, onBack }) {
         <div className="victory-card">
           <div className="victory-title">LEVEL COMPLETE!</div>
           <div className="stars">{stars}</div>
-          <div style={{ color: "var(--text-dim)", marginBottom: 8 }}>Logic Gates mastered</div>
+          <div style={{ color: "var(--text-dim)", marginBottom: 8 }}>
+            Logic Gates mastered
+          </div>
           <div className="victory-score">{score} pts</div>
-          <div style={{ color: "var(--text-dim)", fontSize: "0.8rem", marginBottom: 24 }}>
-            You understand AND, OR, XOR, NOR and more — like a real hardware engineer!
+          <div
+            style={{
+              color: "var(--text-dim)",
+              fontSize: "0.8rem",
+              marginBottom: 24,
+            }}
+          >
+            You understand AND, OR, XOR, NOR and more — like a real hardware
+            engineer!
           </div>
           <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-            <button className="btn btn-ghost" onClick={onBack}>← Menu</button>
-            <button className="btn btn-primary" onClick={() => onComplete(score)}>Next Level →</button>
+            <button className="btn btn-ghost" onClick={onBack}>
+              ← Menu
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={() => onComplete(score, mistakes)}
+            >
+              Next Level →
+            </button>
           </div>
         </div>
       </div>
@@ -620,23 +916,45 @@ function Level2({ onComplete, onBack }) {
   return (
     <div className="game-screen">
       <div className="game-header">
-        <button className="btn btn-ghost" style={{ padding: "6px 12px", fontSize: "0.7rem" }} onClick={onBack}>← Back</button>
+        <button
+          className="btn btn-ghost"
+          style={{ padding: "6px 12px", fontSize: "0.7rem" }}
+          onClick={onBack}
+        >
+          ← Back
+        </button>
         <div className="level-tag">LEVEL 2</div>
         <div className="game-title">Logic Gates</div>
         <div className="score-display">{score} pts</div>
       </div>
       <div className="progress-bar">
-        <div className="progress-fill" style={{ width: `${(pIdx / GATE_PUZZLES.length) * 100}%`, background: "linear-gradient(90deg, #ff006e, #ffd60a)" }} />
+        <div
+          className="progress-fill"
+          style={{
+            width: `${(pIdx / GATE_PUZZLES.length) * 100}%`,
+            background: "linear-gradient(90deg, #ff006e, #ffd60a)",
+          }}
+        />
       </div>
 
       <div className="info-box">
-        Puzzle {pIdx + 1} of {GATE_PUZZLES.length} — Choose a gate so that the output equals <strong style={{ color: "var(--accent3)" }}>{p.target}</strong>
+        Puzzle {pIdx + 1} of {GATE_PUZZLES.length} — Choose a gate so that the
+        output equals{" "}
+        <strong style={{ color: "var(--accent3)" }}>{p.target}</strong>
       </div>
 
       <div className="gates-container">
         <div className="gate-row">
           <div style={{ marginRight: 8 }}>
-            <div style={{ fontSize: "0.7rem", color: "var(--text-dim)", marginBottom: 6 }}>INPUTS</div>
+            <div
+              style={{
+                fontSize: "0.7rem",
+                color: "var(--text-dim)",
+                marginBottom: 6,
+              }}
+            >
+              INPUTS
+            </div>
             <div className="gate-inputs">
               <div className={`gate-input ${p.a ? "on" : "off"}`}>{p.a}</div>
               <div className={`gate-input ${p.b ? "on" : "off"}`}>{p.b}</div>
@@ -646,36 +964,78 @@ function Level2({ onComplete, onBack }) {
           <div style={{ fontSize: "1.5rem", color: "var(--text-dim)" }}>→</div>
 
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: "0.7rem", color: "var(--text-dim)", marginBottom: 6 }}>SELECT GATE</div>
+            <div
+              style={{
+                fontSize: "0.7rem",
+                color: "var(--text-dim)",
+                marginBottom: 6,
+              }}
+            >
+              SELECT GATE
+            </div>
             <select
               className="gate-select"
               value={selectedGate}
-              onChange={e => { if (!answered) setSelectedGate(e.target.value); }}
+              onChange={(e) => {
+                if (!answered) setSelectedGate(e.target.value);
+              }}
             >
-              {GATE_TYPES.map(g => <option key={g} value={g}>{g}</option>)}
+              {GATE_TYPES.map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
+              ))}
             </select>
           </div>
 
           <div style={{ fontSize: "1.5rem", color: "var(--text-dim)" }}>→</div>
 
           <div>
-            <div style={{ fontSize: "0.7rem", color: "var(--text-dim)", marginBottom: 6 }}>OUTPUT</div>
-            <div className={`gate-output ${output ? "on" : "off"}`}>{output}</div>
+            <div
+              style={{
+                fontSize: "0.7rem",
+                color: "var(--text-dim)",
+                marginBottom: 6,
+              }}
+            >
+              OUTPUT
+            </div>
+            <div className={`gate-output ${output ? "on" : "off"}`}>
+              {output}
+            </div>
           </div>
 
           <div style={{ marginLeft: 16 }}>
-            <div style={{ fontSize: "0.7rem", color: "var(--text-dim)", marginBottom: 6 }}>NEED</div>
-            <div className={`gate-output ${p.target ? "on" : "off"}`}>{p.target}</div>
+            <div
+              style={{
+                fontSize: "0.7rem",
+                color: "var(--text-dim)",
+                marginBottom: 6,
+              }}
+            >
+              NEED
+            </div>
+            <div className={`gate-output ${p.target ? "on" : "off"}`}>
+              {p.target}
+            </div>
           </div>
         </div>
       </div>
 
       <div className="hint-text">
-        💡 Gate reference: <span style={{ color: "var(--accent)" }}>AND</span> = both 1 | <span style={{ color: "var(--accent2)" }}>OR</span> = at least one 1 | <span style={{ color: "var(--accent4)" }}>XOR</span> = different inputs | <span style={{ color: "var(--accent3)" }}>NOT</span> = flip input A
+        💡 Gate reference: <span style={{ color: "var(--accent)" }}>AND</span> =
+        both 1 | <span style={{ color: "var(--accent2)" }}>OR</span> = at least
+        one 1 | <span style={{ color: "var(--accent4)" }}>XOR</span> = different
+        inputs | <span style={{ color: "var(--accent3)" }}>NOT</span> = flip
+        input A
       </div>
 
       {!answered && (
-        <button className="btn btn-primary" style={{ alignSelf: "flex-start" }} onClick={check}>
+        <button
+          className="btn btn-primary"
+          style={{ alignSelf: "flex-start" }}
+          onClick={check}
+        >
           Check Answer
         </button>
       )}
@@ -683,10 +1043,19 @@ function Level2({ onComplete, onBack }) {
       {answered && (
         <>
           <div className={`feedback-box ${isCorrect ? "correct" : "wrong"}`}>
-            <strong>{isCorrect ? "✅ Correct!" : `❌ Not quite — the correct gate was ${p.correct}`}</strong>
-            <br />{p.hint}
+            <strong>
+              {isCorrect
+                ? "✅ Correct!"
+                : `❌ Not quite — the correct gate was ${p.correct}`}
+            </strong>
+            <br />
+            {p.hint}
           </div>
-          <button className="btn btn-primary" onClick={next} style={{ alignSelf: "flex-end" }}>
+          <button
+            className="btn btn-primary"
+            onClick={next}
+            style={{ alignSelf: "flex-end" }}
+          >
             {pIdx + 1 >= GATE_PUZZLES.length ? "See Results →" : "Next →"}
           </button>
         </>
@@ -702,26 +1071,31 @@ function Level3({ onComplete, onBack }) {
   const [answered, setAnswered] = useState(false);
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
+  const [mistakes, setMistakes] = useState(0);
 
   const p = DEBUG_PUZZLES[pIdx];
   const isCorrect = selected === p.bugLine;
 
   function pickLine(i) {
     if (answered) return;
+    playSound("click");
     setSelected(i);
   }
 
   function check() {
-    if (selected === null || answered) return;
-    setAnswered(true);
-    if (isCorrect) setScore(s => s + 150);
-  }
+  if (selected === null || answered) return;
+  playSound(isCorrect ? "correct" : "wrong"); 
+  setAnswered(true);
+  if (isCorrect) setScore(s => s + 150);
+  else setMistakes(m => m + 1);
+}
+
 
   function next() {
     if (pIdx + 1 >= DEBUG_PUZZLES.length) {
       setDone(true);
     } else {
-      setPIdx(i => i + 1);
+      setPIdx((i) => i + 1);
       setSelected(null);
       setAnswered(false);
     }
@@ -734,14 +1108,30 @@ function Level3({ onComplete, onBack }) {
         <div className="victory-card">
           <div className="victory-title">ALL BUGS FOUND!</div>
           <div className="stars">{stars}</div>
-          <div style={{ color: "var(--text-dim)", marginBottom: 8 }}>Debug Mode cleared</div>
+          <div style={{ color: "var(--text-dim)", marginBottom: 8 }}>
+            Debug Mode cleared
+          </div>
           <div className="victory-score">{score} pts</div>
-          <div style={{ color: "var(--text-dim)", fontSize: "0.8rem", marginBottom: 24 }}>
-            Debugging is one of the most important skills in CS — you've got it! 🐛✅
+          <div
+            style={{
+              color: "var(--text-dim)",
+              fontSize: "0.8rem",
+              marginBottom: 24,
+            }}
+          >
+            Debugging is one of the most important skills in CS — you've got it!
+            🐛✅
           </div>
           <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-            <button className="btn btn-ghost" onClick={onBack}>← Menu</button>
-            <button className="btn btn-primary" onClick={() => onComplete(score)}>🏆 Finish!</button>
+            <button className="btn btn-ghost" onClick={onBack}>
+              ← Menu
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={() => onComplete(score, mistakes)}
+            >
+              🏆 Finish!
+            </button>
           </div>
         </div>
       </div>
@@ -751,17 +1141,30 @@ function Level3({ onComplete, onBack }) {
   return (
     <div className="game-screen">
       <div className="game-header">
-        <button className="btn btn-ghost" style={{ padding: "6px 12px", fontSize: "0.7rem" }} onClick={onBack}>← Back</button>
+        <button
+          className="btn btn-ghost"
+          style={{ padding: "6px 12px", fontSize: "0.7rem" }}
+          onClick={onBack}
+        >
+          ← Back
+        </button>
         <div className="level-tag">LEVEL 3</div>
         <div className="game-title">Debug Mode</div>
         <div className="score-display">{score} pts</div>
       </div>
       <div className="progress-bar">
-        <div className="progress-fill" style={{ width: `${(pIdx / DEBUG_PUZZLES.length) * 100}%`, background: "linear-gradient(90deg, #ffd60a, #ff006e)" }} />
+        <div
+          className="progress-fill"
+          style={{
+            width: `${(pIdx / DEBUG_PUZZLES.length) * 100}%`,
+            background: "linear-gradient(90deg, #ffd60a, #ff006e)",
+          }}
+        />
       </div>
 
       <div className="info-box">
-        Puzzle {pIdx + 1} of {DEBUG_PUZZLES.length} — <strong>{p.title}</strong>: Click the line that contains the bug
+        Puzzle {pIdx + 1} of {DEBUG_PUZZLES.length} — <strong>{p.title}</strong>
+        : Click the line that contains the bug
       </div>
 
       <div className="debug-lines">
@@ -769,7 +1172,8 @@ function Level3({ onComplete, onBack }) {
           let cls = "debug-line";
           if (selected === i && !answered) cls += " selected-wrong";
           if (answered && i === p.bugLine) cls += " selected-correct";
-          else if (answered && selected === i && i !== p.bugLine) cls += " selected-wrong";
+          else if (answered && selected === i && i !== p.bugLine)
+            cls += " selected-wrong";
           return (
             <div key={i} className={cls} onClick={() => pickLine(i)}>
               <span className="line-num">{i + 1}</span>
@@ -777,24 +1181,36 @@ function Level3({ onComplete, onBack }) {
                 style={{ flex: 1 }}
                 dangerouslySetInnerHTML={{
                   __html: line.code
-                    .replace(/(for|in|if|else|print|range|def|return|True|False|and|or|not)/g, '<span class="kw">$1</span>')
+                    .replace(
+                      /(for|in|if|else|print|range|def|return|True|False|and|or|not)/g,
+                      '<span class="kw">$1</span>',
+                    )
                     .replace(/(".*?")/g, '<span class="str">$1</span>')
                     .replace(/(#.*$)/g, '<span class="comment">$1</span>')
                     .replace(/(\d+)/g, '<span class="num">$1</span>'),
                 }}
               />
-              {selected === i && !answered && <span style={{ color: "var(--accent4)", fontSize: "0.75rem" }}>← selected</span>}
+              {selected === i && !answered && (
+                <span style={{ color: "var(--accent4)", fontSize: "0.75rem" }}>
+                  ← selected
+                </span>
+              )}
             </div>
           );
         })}
       </div>
 
       <div className="hint-text">
-        💡 Read each line carefully. Look for wrong operators, typos, or logic errors.
+        💡 Read each line carefully. Look for wrong operators, typos, or logic
+        errors.
       </div>
 
       {!answered && selected !== null && (
-        <button className="btn btn-danger" style={{ alignSelf: "flex-start" }} onClick={check}>
+        <button
+          className="btn btn-danger"
+          style={{ alignSelf: "flex-start" }}
+          onClick={check}
+        >
           🐛 Report Bug on Line {selected + 1}
         </button>
       )}
@@ -802,11 +1218,25 @@ function Level3({ onComplete, onBack }) {
       {answered && (
         <>
           <div className={`feedback-box ${isCorrect ? "correct" : "wrong"}`}>
-            <strong>{isCorrect ? "✅ Bug Found!" : `❌ Wrong line — bug was on line ${p.bugLine + 1}`}</strong>
-            <br />{p.explanation}
-            <br /><br />Fix: <span style={{ fontFamily: "monospace", color: "var(--accent4)" }}>{p.fix}</span>
+            <strong>
+              {isCorrect
+                ? "✅ Bug Found!"
+                : `❌ Wrong line — bug was on line ${p.bugLine + 1}`}
+            </strong>
+            <br />
+            {p.explanation}
+            <br />
+            <br />
+            Fix:{" "}
+            <span style={{ fontFamily: "monospace", color: "var(--accent4)" }}>
+              {p.fix}
+            </span>
           </div>
-          <button className="btn btn-primary" onClick={next} style={{ alignSelf: "flex-end" }}>
+          <button
+            className="btn btn-primary"
+            onClick={next}
+            style={{ alignSelf: "flex-end" }}
+          >
             {pIdx + 1 >= DEBUG_PUZZLES.length ? "🏆 Finish Game" : "Next →"}
           </button>
         </>
@@ -1631,22 +2061,44 @@ function generateDebugPuzzle(stage = 1) {
   return (
     <div className="game-screen">
       <div className="game-header">
-        <button className="btn btn-ghost" style={{ padding: "6px 12px", fontSize: "0.7rem" }} onClick={onBack}>← Back</button>
+        <button
+          className="btn btn-ghost"
+          style={{ padding: "6px 12px", fontSize: "0.7rem" }}
+          onClick={onBack}
+        >
+          ← Back
+        </button>
         <div className="level-tag">LEVEL 4</div>
         <div className="game-title">Text Adventure</div>
         <div className="score-display">{score} pts</div>
       </div>
       <div className="progress-bar">
-        <div className="progress-fill" style={{ width: "60%", background: "linear-gradient(90deg, #7fff00, #00f5ff)" }} />
+        <div
+          className="progress-fill"
+          style={{
+            width: "60%",
+            background: "linear-gradient(90deg, #7fff00, #00f5ff)",
+          }}
+        />
       </div>
 
       <div className="info-box">
-        Escape the CS Dungeon! Type commands to navigate. Wrong commands cost points 💀
+        Escape the CS Dungeon! Type commands to navigate. Wrong commands cost
+        points 💀
       </div>
 
-      <div className={`adventure-box ${glitch ? "glitch" : ""}`} ref={historyRef}>
+      <div
+        className={`adventure-box ${glitch ? "glitch" : ""}`}
+        ref={historyRef}
+      >
         {displayedHistory.map((line, i) => (
-          <div key={i} className={`adventure-line ${line.type}`} style={{ whiteSpace: "pre-wrap" }}>{line.text}</div>
+          <div
+            key={i}
+            className={`adventure-line ${line.type}`}
+            style={{ whiteSpace: "pre-wrap" }}
+          >
+            {line.text}
+          </div>
         ))}
       </div>
 
@@ -1657,7 +2109,7 @@ function generateDebugPuzzle(stage = 1) {
           ref={inputRef}
           className="adventure-input"
           value={input}
-          onChange={e => setInput(e.target.value)}
+          onChange={(e) => setInput(e.target.value)}
           onKeyDown={onKeyDown}
           placeholder="type a command and press Enter..."
           autoFocus
@@ -1665,7 +2117,12 @@ function generateDebugPuzzle(stage = 1) {
       </div>
 
       <div className="hint-text">
-        💡 Commands: <span style={{ color: "var(--accent3)" }}>go north</span> / <span style={{ color: "var(--accent3)" }}>go south</span> / <span style={{ color: "var(--accent3)" }}>go east</span> / <span style={{ color: "var(--accent3)" }}>go west</span> / <span style={{ color: "var(--accent3)" }}>look</span> / <span style={{ color: "var(--accent3)" }}>solve [code]</span>
+        💡 Commands: <span style={{ color: "var(--accent3)" }}>go north</span> /{" "}
+        <span style={{ color: "var(--accent3)" }}>go south</span> /{" "}
+        <span style={{ color: "var(--accent3)" }}>go east</span> /{" "}
+        <span style={{ color: "var(--accent3)" }}>go west</span> /{" "}
+        <span style={{ color: "var(--accent3)" }}>look</span> /{" "}
+        <span style={{ color: "var(--accent3)" }}>solve [code]</span>
       </div>
     </div>
   );
@@ -1675,37 +2132,95 @@ function generateDebugPuzzle(stage = 1) {
 // APP ROOT
 // ══════════════════════════════════════════════
 function App() {
-  const [screen, setScreen] = useState("home"); // home | level1 | level2 | level3 | level4
+  const [screen, setScreen] = useState("home");
   const [completedLevels, setCompletedLevels] = useState([]);
   const [scores, setScores] = useState({});
+  // ── NEW ──
+  const [unlockedAchievements, setUnlockedAchievements] = useState([]);
+  const [toastQueue, setToastQueue] = useState([]);
 
-  function completeLevel(levelId, pts) {
-    setCompletedLevels(prev => prev.includes(levelId) ? prev : [...prev, levelId]);
-    setScores(prev => ({ ...prev, [levelId]: Math.max(prev[levelId] || 0, pts) }));
-    // Auto-go to next level or home
-    const nextId = levelId + 1;
-    if (nextId <= 4) {
-      setScreen(`level${nextId}`);
-    } else {
-      setScreen("home");
+  function unlockAchievement(id) {
+    if (unlockedAchievements.includes(id)) return;
+    const achievement = ACHIEVEMENTS.find((a) => a.id === id);
+    if (!achievement) return;
+    setUnlockedAchievements((prev) => [...prev, id]);
+    setToastQueue((prev) => [...prev, achievement]);
+  }
+
+  function dismissToast() {
+    setToastQueue((prev) => prev.slice(1));
+  }
+
+  function completeLevel(levelId, pts, mistakes = 0) {
+    setCompletedLevels((prev) =>
+      prev.includes(levelId) ? prev : [...prev, levelId],
+    );
+    setScores((prev) => ({
+      ...prev,
+      [levelId]: Math.max(prev[levelId] || 0, pts),
+    }));
+
+    // ── ACHIEVEMENTS ON LEVEL COMPLETE ──
+    if (mistakes === 0) {
+      const ids = {
+        1: "no_mistakes_1",
+        2: "no_mistakes_2",
+        3: "no_mistakes_3",
+      };
+      if (ids[levelId]) unlockAchievement(ids[levelId]);
     }
+    if (levelId === 4) unlockAchievement("escapee");
+
+    const newCompleted = completedLevels.includes(levelId)
+      ? completedLevels
+      : [...completedLevels, levelId];
+    if (newCompleted.length >= 4) unlockAchievement("all_levels");
+
+    const nextId = levelId + 1;
+    if (nextId <= 4) setScreen(`level${nextId}`);
+    else setScreen("home");
   }
 
-  if (screen === "home") {
-    return <HomeScreen completedLevels={completedLevels} scores={scores} onSelectLevel={id => setScreen(`level${id}`)} />;
-  }
-  if (screen === "level1") {
-    return <Level1 onComplete={pts => completeLevel(1, pts)} onBack={() => setScreen("home")} />;
-  }
-  if (screen === "level2") {
-    return <Level2 onComplete={pts => completeLevel(2, pts)} onBack={() => setScreen("home")} />;
-  }
-  if (screen === "level3") {
-    return <Level3 onComplete={pts => completeLevel(3, pts)} onBack={() => setScreen("home")} />;
-  }
-  if (screen === "level4") {
-    return <Level4 onComplete={pts => completeLevel(4, pts)} onBack={() => setScreen("home")} />;
-  }
+  return (
+    <>
+      {screen === "home" && (
+        <HomeScreen
+          completedLevels={completedLevels}
+          scores={scores}
+          unlockedAchievements={unlockedAchievements}
+          onSelectLevel={(id) => setScreen(`level${id}`)}
+        />
+      )}
+      {screen === "level1" && (
+        <Level1
+          onComplete={(pts, mistakes) => completeLevel(1, pts, mistakes)}
+          onBack={() => setScreen("home")}
+          onAchievement={unlockAchievement}
+        />
+      )}
+      {screen === "level2" && (
+        <Level2
+          onComplete={(pts, mistakes) => completeLevel(2, pts, mistakes)}
+          onBack={() => setScreen("home")}
+        />
+      )}
+      {screen === "level3" && (
+        <Level3
+          onComplete={(pts, mistakes) => completeLevel(3, pts, mistakes)}
+          onBack={() => setScreen("home")}
+        />
+      )}
+      {screen === "level4" && (
+        <Level4
+          onComplete={(pts) => completeLevel(4, pts)}
+          onBack={() => setScreen("home")}
+        />
+      )}
+      {toastQueue.length > 0 && (
+        <AchievementToast achievement={toastQueue[0]} onDone={dismissToast} />
+      )}
+    </>
+  );
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
