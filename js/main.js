@@ -890,7 +890,7 @@ function Level1({ onComplete, onBack, onAchievement }) {
         <div style={{ height: 20 }} />
         <div
           style={{
-            fontSize: "0.95rem",
+            fontSize: "0.96rem",
             color: "var(--text-dim)",
             marginBottom: 16,
             paddingBottom: 12,
