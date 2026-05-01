@@ -1270,8 +1270,8 @@ function Level4({ onComplete, onBack }) {
   const [locked, setLocked] = useState(false);
   const [debugStage, setDebugStage] = useState(1);
   const [debugPuzzle, setDebugPuzzle] = useState(null);
-  const CHAR_SPEED = 35;
-  const LINE_DELAY = 600;
+  const CHAR_SPEED = 18;
+  const LINE_DELAY = 300;
 
   useEffect(() => {
     if (historyRef.current) {
@@ -1676,12 +1676,6 @@ function generateDebugPuzzle(stage = 1) {
               }
             });          
 
-          const code = binaryCode.join("");
-          if (code.length > 0) {
-            addLine(`> COLLECTED BINARY: ${code}`, "system")
-              .then(() => new Promise(r => setTimeout(r, 600)));
-          }
-
           // LOGIC ROOM
         } else if (nextId === "logic") {
           const textToShow = getRoomText(nextId);
@@ -1879,7 +1873,7 @@ function generateDebugPuzzle(stage = 1) {
                 .then(() => new Promise(r => setTimeout(r, 600)))
                 .then(() => {
                   triggerGlitch(800);
-                  addLine("> REALITY DESYNCHRONISING...", "error");
+                  return addLine("> REALITY DESYNCHRONISING...", "error");
                 })
                 .then(() => new Promise(r => setTimeout(r, 1200)))
 
