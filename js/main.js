@@ -1474,8 +1474,7 @@ Paths detected: NORTH, EAST, SOUTH, WEST`,
       enterFirst: `> DEBUG NODE ACCESSED
 You enter a corrupted section of the system.
 Fragments of code flicker in and out of existence.
-An unstable process is running here.
-type "look" to inspect the code and identify the bug.`,
+An unstable process is running here.`,
 
       enterOther: "You return to the debug node. The corrupted code reappears.",
 
