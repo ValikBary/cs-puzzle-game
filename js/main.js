@@ -1340,11 +1340,6 @@ function computeGate(gate, a, b) {
   }
 }
 
-
-
-// NOTE: enterFirst / enterOther not yet implemented in navigation logic
-// Will be handled in GO command logic later
-
 // ── LEVEL 4 – TEXT ADVENTURE ──────────────────
 // Each room contains:
 // enterFirst -> text shown first time entering
@@ -2363,7 +2358,9 @@ function Level4({ onComplete, onBack }) {
   const [logicScreen, setLogicScreen] = useState(false);
   const [binaryCode, setBinaryCode] = useState([]);
   const [glitch, setGlitch] = useState(false);
-  const [visitedRooms, setVisitedRooms] = useState({});
+  const [visitedRooms, setVisitedRooms] = useState({
+    room1: true
+  });
   const [completedRooms, setCompletedRooms] = useState({});
   const [locked, setLocked] = useState(false);
   const [debugStage, setDebugStage] = useState(1);
@@ -2498,26 +2495,28 @@ function Level4({ onComplete, onBack }) {
       });
   }
 
-  function handleRoomSuccess(roomId, bits = 1, delay = 1200) {
+  function handleRoomSuccess(roomId, bits = 1, transitionDelay = 1200) {
     return addLine("✅ NODE STABILISED", "success")
       .then(() => new Promise(r => setTimeout(r, delay(800))))
 
       .then(() => {
         if (bits > 0) return awardBits(bits);
 
-        addLine("> NO DATA RECOVERED", "error")
+        addLine("> NO DATA RECOVERED", "error");
         return Promise.resolve(binaryCode);
       })
+
       .then(updatedCode => {
-        return new Promise(r => setTimeout(() => r(updatedCode), 1500));
+        return new Promise(r => setTimeout(() => r(updatedCode), delay(1500)));
       })
+
       .then(updatedCode => {
         setCompletedRooms(prev => ({
           ...prev,
           [roomId]: true
         }));
 
-        return completeRoom(roomId, delay, updatedCode);
+        return completeRoom(roomId, transitionDelay, updatedCode);
       });
   }
 
