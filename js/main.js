@@ -1307,13 +1307,20 @@ function Level3Wrapper({ onComplete, onBack, onAchievement }) {
           <div className="info-box" style={{ textAlign: "left" }}>
             <strong>Gate guide:</strong>
             <br /><br />
-            AND → output is 1 only if both inputs are 1
+            AND → 1 only if both inputs are 1
             <br />
-            OR → output is 1 if at least one input is 1
+            OR → 1 if at least one input is 1
             <br />
-            XOR → output is 1 if the inputs are different
+            NOT → flips the input (1 → 0, 0 → 1)
             <br />
-            NOT → flips the input
+            NAND → opposite of AND (0 only if both are 1)
+            <br />
+            NOR → opposite of OR (1 only if both are 0)
+            <br />
+            XOR → 1 if inputs are different
+          </div>
+          <div className="hint-text">
+            💡 Tip: NAND and NOR are just inverted versions of AND and OR.
           </div>
 
           <button className="btn btn-primary" onClick={() => setStarted(true)}>
