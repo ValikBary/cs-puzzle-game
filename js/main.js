@@ -2403,10 +2403,12 @@ function Level4({ onComplete, onBack }) {
   }, [displayedHistory]);
 
   useEffect(() => {
+    if (!started) return;
+
     history.forEach((line) => {
       addLine(line.text, line.type);
     });
-  }, []);
+  }, [started]);
 
   const typingQueue = useRef(Promise.resolve());
 
