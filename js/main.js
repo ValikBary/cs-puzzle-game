@@ -337,7 +337,7 @@ const IF_ELSE_QUESTIONS = [
   },
 ];
 
-// ── LEVEL 2 – LOGIC GATES ─────────────────────
+// ── LEVEL 3 – LOGIC GATES ─────────────────────
 // ── GATE DATA ─────────────────────────────────
 const GATE_DATA = [
   {
@@ -900,8 +900,8 @@ function ChallengeSVGThreeChain({ gate1, gate2, gate3, a, b, cInput }) {
   );
 }
  
-// LEVEL 2 — PRACTICE MODE
-function Level2Practice({ onProceedToChallenge, onBack }) {
+// LEVEL 3 — PRACTICE MODE
+function Level3Practice({ onProceedToChallenge, onBack }) {
   const [gateIdx, setGateIdx]     = useState(0);
   const [inputA, setInputA]       = useState(0);
   const [inputB, setInputB]       = useState(0);
@@ -1069,8 +1069,8 @@ function Level2Practice({ onProceedToChallenge, onBack }) {
   );
 }
  
-// LEVEL 2 — CHALLENGE MODE
-function Level2Challenge({ onComplete, onBack, onAchievement }) {
+// LEVEL 3 — CHALLENGE MODE
+function Level3Challenge({ onComplete, onBack, onAchievement }) {
   const [pIdx, setPIdx]         = useState(0);
   const [answered, setAnswered] = useState(false);
   const [selected, setSelected] = useState(null);
@@ -1280,6 +1280,7 @@ function Level2Challenge({ onComplete, onBack, onAchievement }) {
 // LEVEL 3 WRAPPER — Practice | Challenge tabs
 // This is the single component used for screen "level 3"
 function Level3Wrapper({ onComplete, onBack, onAchievement }) {
+  const [started, setStarted] = useState(false);
   const [tab, setTab] = useState("practice");
  
   const tabStyle = (active) => ({
@@ -1292,6 +1293,36 @@ function Level3Wrapper({ onComplete, onBack, onAchievement }) {
     fontSize: "0.7rem", letterSpacing: 2,
     cursor: "pointer", transition: "all 0.2s", textAlign: "center",
   });
+
+  if (!started) {
+    return (
+      <div className="screen">
+        <div className="victory-card">
+          <div className="victory-title">LOGIC GATES</div>
+
+          <div style={{ color: "var(--text-dim)", marginBottom: 16 }}>
+            Learn how binary inputs pass through logic gates to produce an output.
+          </div>
+
+          <div className="info-box" style={{ textAlign: "left" }}>
+            <strong>Gate guide:</strong>
+            <br /><br />
+            AND → output is 1 only if both inputs are 1
+            <br />
+            OR → output is 1 if at least one input is 1
+            <br />
+            XOR → output is 1 if the inputs are different
+            <br />
+            NOT → flips the input
+          </div>
+
+          <button className="btn btn-primary" onClick={() => setStarted(true)}>
+            Start Level →
+          </button>
+        </div>
+      </div>
+    );
+  }
  
   return (
     <div className="game-screen">
@@ -3580,7 +3611,7 @@ function App() {
       )}
 
       {screen === "level3" && (
-        <Level3
+        <Level3Wrapper
           onComplete={(pts, mistakes) => completeLevel(3, pts, mistakes)}
           onBack={() => setScreen("home")}
           onAchievement={unlockAchievement}
