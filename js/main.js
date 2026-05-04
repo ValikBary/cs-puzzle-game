@@ -100,6 +100,40 @@ const ACHIEVEMENTS = [
 const LEVELS = [
   {
     id: 1,
+    name: "Binary to Deciaml",
+    icon: "🔢",
+    desc: "Convert binary numbers to decimal values",
+    color: "#00f5ff",
+    difficulty: "Easy",
+  },
+  {
+    id: 2,
+    name: "If / Else",
+    icon: "🧠",
+    desc: "Fill in the missing condition to fix the code",
+    color: "orange",
+    difficulty: "Medium",
+  },
+  {
+    id: 3,
+    name: "Logic Gates",
+    icon: "⚡",
+    desc: "Pick the right gate so the output is 1",
+    color: "#ff006e",
+    difficulty: "Medium",
+  },
+  {
+    id: 4,
+    name: "Text Adventure",
+    icon: "🗺️",
+    desc: "Type commands to escape the maze",
+    color: "#7fff00",
+    difficulty: "Hard",
+  },
+]
+/*const LEVELS = [
+  {
+    id: 1,
     name: "If / Else",
     icon: "🧠",
     desc: "Fill in the missing condition to fix the code",
@@ -122,7 +156,9 @@ const LEVELS = [
     color: "#7fff00",
     difficulty: "Hard",
   },
-];
+];*/
+
+
 
 // ── LEVEL 1 – IF/ELSE QUESTIONS ───────────────
 const IF_ELSE_QUESTIONS = [
