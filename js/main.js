@@ -1553,7 +1553,7 @@ A rule flashes in front of you...`,
 
       enterOther: "You return to the conditional node. The gate awaits your input.",
 
-      desc: `The gate's logic is missing a crucial component - the condition.`,
+      desc: `\nThe gate's logic is missing a crucial component - the condition.`,
 
       exits: {},
     },
@@ -2462,6 +2462,9 @@ function Level4({ onComplete, onBack }) {
   const [ifPuzzle, setIfPuzzle] = useState(null);
   const [ifStage, setIfStage] = useState(1);
 
+  const [firewallBoss, setFirewallBoss] = useState(null);
+  const [firewallAttempts, setFirewallAttempts] = useState(0);
+
   const FAST_MODE = true; // for testing true = instant text, false = typewriter effect
   const CHAR_SPEED = FAST_MODE ? 0 : 35;
   const LINE_DELAY = FAST_MODE ? 0 : 700;
@@ -2836,6 +2839,37 @@ function generateIfElsePuzzle(stage = 1) {
   };
 }
 
+function generateFirewallBoss(codeArray) {
+  const original = codeArray.join("");
+  const ones = original.split("").filter(bit => bit === "1").length;
+
+  let ruleText = "";
+  let transformed = "";
+
+  if (ones > 3) {
+    ruleText = `if number_of_1s > 3:
+    invert_bits()`;
+    transformed = original
+      .split("")
+      .map(bit => bit === "1" ? "0" : "1")
+      .join("");
+  } else {
+    ruleText = `if number_of_1s > 3:
+    invert_bits()
+else:
+    rotate_left()`;
+    transformed = original.slice(1) + original[0];
+  }
+
+  return {
+    original,
+    ones,
+    ruleText,
+    transformed,
+    answer: parseInt(transformed, 2)
+  };
+}
+
   // ── COMMAND HANDLER ──────────────────
   // Processes all player input:
   // help -> show commands
@@ -2864,8 +2898,9 @@ function generateIfElsePuzzle(stage = 1) {
       if (room === "ifelse" && ifPuzzle) {
         return addLine(currentRoom.desc, "system")
           .then(() => addLine(`> IF / ELSE STAGE ${ifStage}/3`, "system"))
+          .then(() => addLine("", "system"))
           .then(() => addLine(`> ${ifPuzzle.title.toUpperCase()}`, "system"))
-          .then(() => addLine(`> ${ifPuzzle.title.toUpperCase()}`, "system"))
+          .then(() => addLine("", "system"))
           .then(() => addLine(ifPuzzle.variables.join("\n"), "system"))
           .then(() => addLine("", "system"))
           .then(() => addLine(`if ${ifPuzzle.condition}:`, "system"))
@@ -2990,14 +3025,24 @@ function generateIfElsePuzzle(stage = 1) {
             [nextId]: true,
           }));
 
+          const boss = generateFirewallBoss(binaryCode);
+          setFirewallBoss(boss);
+          setFirewallAttempts(0);
+
           loadNewRoom(textToShow)
             .then(() => {
               const code = binaryCode.join("");
 
               addLine(`> DATA FRAGMENTS DETECTED: ${binaryCode.length}`, "system");
 
-              if (code.length > 0) {
-                return addLine(`> CURRENT BINARY: ${code}`, "system");
+              if (boss) {
+                return addLine(`> CURRENT BINARY: ${boss.original}`, "system")
+                  .then(() => addLine("", "system"))
+                  .then(() => addLine("> FIREWALL RULE DETECTED:", "system"))
+                  .then(() => addLine(boss.ruleText, "system"))
+                  .then(() => addLine("", "system"))
+                  .then(() => addLine("> Apply the rule, then convert the result to decimal.", "system"))
+                  .then(() => addLine("Type: solve [decimal]", "system"));
               }
             });          
 
@@ -3249,7 +3294,12 @@ function generateIfElsePuzzle(stage = 1) {
           return;
         }
 
-        const correctDecimal = parseInt(binaryString, 2);
+        if (!firewallBoss) {
+          addLine("> FIREWALL ERROR - NO DECRYPTION RULE LOADED", "error");
+          return;
+        }
+
+        const correctDecimal = firewallBoss.answer;
         const userValue = parseInt(answer, 10);
 
         // INVALID INPUT
