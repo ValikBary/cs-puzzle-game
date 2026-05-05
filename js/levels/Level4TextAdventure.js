@@ -248,7 +248,7 @@ function Level4({ onComplete, onBack }) {
   const [started, setStarted] = useState(false);
   const [input, setInput] = useState("");
   const [won, setWon] = useState(false);
-  const [score, setScore] = useState(300);
+  const [score, setScore] = useState(0);
   const historyRef = useRef(null);
   const inputRef = useRef(null);
   const [loopCount, setLoopCount] = useState(0);
