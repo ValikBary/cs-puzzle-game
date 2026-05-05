@@ -100,6 +100,14 @@ const ACHIEVEMENTS = [
 const LEVELS = [
   {
     id: 1,
+    name: "Binary to Deciaml",
+    icon: "🔢",
+    desc: "Convert binary numbers to decimal values",
+    color: "#00f5ff",
+    difficulty: "Easy",
+  },
+  {
+    id: 2,
     name: "If / Else",
     icon: "🧠",
     desc: "Fill in the missing condition to fix the code",
@@ -107,7 +115,7 @@ const LEVELS = [
     difficulty: "Medium",
   },
   {
-    id: 2,
+    id: 3,
     name: "Logic Gates",
     icon: "⚡",
     desc: "Pick the right gate so the output is 1",
@@ -124,7 +132,67 @@ const LEVELS = [
   },
 ];
 
-// ── LEVEL 1 – IF/ELSE QUESTIONS ───────────────
+// ── LEVEL 1 - BINARY TO DECIMAL QUESTIONS ───────────────
+function generateBinaryQuestions(count = 7) {
+  const questions = [];
+  const used = new Set();
+
+  while (questions.length < count) {
+    // random number between 1–31 (avoid 0 for simplicity)
+    const max = questions.length < 3 ? 15 : 63; // harder later
+    const num = Math.floor(Math.random() * max) + 1;
+
+    if (used.has(num)) continue;
+    used.add(num);
+
+    const binary = num.toString(2);
+
+    // build explanation dynamically
+    const bits = binary.split("").reverse();
+    const explanationParts = bits.map((bit, i) => {
+      const value = 2 ** i;
+      return `${bit}×${value}`;
+    });
+
+    questions.push({
+      binary,
+      answer: num,
+      explanation: `${binary} = ${explanationParts.reverse().join(" + ")} = ${num}`
+    });
+  }
+
+  return questions;
+}
+
+/*const BINARY_QUESTIONS = [
+  {
+    binary: "0011",
+    answer: 3,
+    explanation: "0011 = 0*8 + 0*4 + 1*2 + 1*1 = 3",
+  },
+  {
+    binary: "0101",
+    answer: 5,
+    explanation: "0101 = 0*8 + 1*4 + 0*2 + 1*1 = 5",
+  },
+  {
+    binary: "1010",
+    answer: 10,
+    explanation: "1010 = 1*8 + 0*4 + 1*2 + 0*1 = 10",
+  },
+  {
+    binary: "1111",
+    answer: 15,
+    explanation: "1111 = 1*8 + 1*4 + 1*2 + 1*1 = 15",
+  },
+  {
+    binary: "10010",
+    answer: 18,
+    explanation: "10010 = 1*16 + 0*8 + 0*4 + 1*2 + 0*1 = 18",
+  }
+];*/
+
+// ── LEVEL 2 – IF/ELSE QUESTIONS ───────────────
 const IF_ELSE_QUESTIONS = [
   {
     context:
@@ -269,7 +337,7 @@ const IF_ELSE_QUESTIONS = [
   },
 ];
 
-// ── LEVEL 2 – LOGIC GATES ─────────────────────
+// ── LEVEL 3 – LOGIC GATES ─────────────────────
 // ── GATE DATA ─────────────────────────────────
 const GATE_DATA = [
   {
@@ -832,8 +900,8 @@ function ChallengeSVGThreeChain({ gate1, gate2, gate3, a, b, cInput }) {
   );
 }
  
-// LEVEL 2 — PRACTICE MODE
-function Level2Practice({ onProceedToChallenge, onBack }) {
+// LEVEL 3 — PRACTICE MODE
+function Level3Practice({ onProceedToChallenge, onBack }) {
   const [gateIdx, setGateIdx]     = useState(0);
   const [inputA, setInputA]       = useState(0);
   const [inputB, setInputB]       = useState(0);
@@ -859,7 +927,7 @@ function Level2Practice({ onProceedToChallenge, onBack }) {
           style={{ padding: "6px 12px", fontSize: "0.7rem" }} onClick={onBack}>
           ← Back
         </button>
-        <div className="level-tag">LEVEL 2 · PRACTICE</div>
+        <div className="level-tag">LEVEL 3 · PRACTICE</div>
         <div className="game-title">Logic Gates</div>
       </div>
  
@@ -1001,8 +1069,8 @@ function Level2Practice({ onProceedToChallenge, onBack }) {
   );
 }
  
-// LEVEL 2 — CHALLENGE MODE
-function Level2Challenge({ onComplete, onBack, onAchievement }) {
+// LEVEL 3 — CHALLENGE MODE
+function Level3Challenge({ onComplete, onBack, onAchievement }) {
   const [pIdx, setPIdx]         = useState(0);
   const [answered, setAnswered] = useState(false);
   const [selected, setSelected] = useState(null);
@@ -1081,7 +1149,7 @@ function Level2Challenge({ onComplete, onBack, onAchievement }) {
           style={{ padding: "6px 12px", fontSize: "0.7rem" }} onClick={onBack}>
           ← Back
         </button>
-        <div className="level-tag">LEVEL 2 · CHALLENGE</div>
+        <div className="level-tag">LEVEL 3 · CHALLENGE</div>
         <div className="game-title">Logic Gates</div>
         <div className="score-display">{score} pts</div>
       </div>
@@ -1209,9 +1277,10 @@ function Level2Challenge({ onComplete, onBack, onAchievement }) {
   );
 }
  
-// LEVEL 2 WRAPPER — Practice | Challenge tabs
-// This is the single component used for screen "level 2"
-function Level2Wrapper({ onComplete, onBack, onAchievement }) {
+// LEVEL 3 WRAPPER — Practice | Challenge tabs
+// This is the single component used for screen "level 3"
+function Level3Wrapper({ onComplete, onBack, onAchievement }) {
+  const [started, setStarted] = useState(false);
   const [tab, setTab] = useState("practice");
  
   const tabStyle = (active) => ({
@@ -1224,6 +1293,43 @@ function Level2Wrapper({ onComplete, onBack, onAchievement }) {
     fontSize: "0.7rem", letterSpacing: 2,
     cursor: "pointer", transition: "all 0.2s", textAlign: "center",
   });
+
+  if (!started) {
+    return (
+      <div className="screen">
+        <div className="victory-card">
+          <div className="victory-title">LOGIC GATES</div>
+
+          <div style={{ color: "var(--text-dim)", marginBottom: 16 }}>
+            Learn how binary inputs pass through logic gates to produce an output.
+          </div>
+
+          <div className="info-box" style={{ textAlign: "left" }}>
+            <strong>Gate guide:</strong>
+            <br /><br />
+            AND → 1 only if both inputs are 1
+            <br />
+            OR → 1 if at least one input is 1
+            <br />
+            NOT → flips the input (1 → 0, 0 → 1)
+            <br />
+            NAND → opposite of AND (0 only if both are 1)
+            <br />
+            NOR → opposite of OR (1 only if both are 0)
+            <br />
+            XOR → 1 if inputs are different
+          </div>
+          <div className="hint-text">
+            💡 Tip: NAND and NOR are just inverted versions of AND and OR.
+          </div>
+
+          <button className="btn btn-primary" onClick={() => setStarted(true)}>
+            Start Level →
+          </button>
+        </div>
+      </div>
+    );
+  }
  
   return (
     <div className="game-screen">
@@ -1237,13 +1343,13 @@ function Level2Wrapper({ onComplete, onBack, onAchievement }) {
       </div>
  
       {tab === "practice" && (
-        <Level2Practice
+        <Level3Practice
           onProceedToChallenge={() => setTab("challenge")}
           onBack={onBack}
         />
       )}
       {tab === "challenge" && (
-        <Level2Challenge
+        <Level3Challenge
           onComplete={onComplete}
           onBack={onBack}
           onAchievement={onAchievement}
@@ -1272,11 +1378,6 @@ function computeGate(gate, a, b) {
   }
 }
 
-
-
-// NOTE: enterFirst / enterOther not yet implemented in navigation logic
-// Will be handled in GO command logic later
-
 // ── LEVEL 4 – TEXT ADVENTURE ──────────────────
 // Each room contains:
 // enterFirst -> text shown first time entering
@@ -1284,6 +1385,10 @@ function computeGate(gate, a, b) {
 // desc -> full descriptionshown when player types "look"
 // exits -> available directions
 // puzzle -> optional puzzle for the room
+
+const ENABLE_DEBUG_ROOM = false; // Set to true to enable the debug room
+const ENABLE_IF_ELSE_ROOM = true; // Set to true to enable the if/else room
+
 
 const binCode = ""
 const ADVENTURE = {
@@ -1334,7 +1439,8 @@ Paths detected: NORTH, EAST, SOUTH, WEST, FIREWALL`,
       exits: {
         north: "loopRoom",
         east: "logic",
-        south: "debug",
+        ...(ENABLE_IF_ELSE_ROOM && { south: "ifelse" }),
+        ...(ENABLE_DEBUG_ROOM && { south: "debug" }),
         west: "room1",
         firewall: "firewall"
       }
@@ -1409,7 +1515,6 @@ Paths detected: NORTH, EAST, SOUTH, WEST`,
       }
     },
 
-    // TODO: Expand debug room to multiple sequential problems
     // DEBUG
     debug: {
       enterFirst: `> DEBUG NODE ACCESSED
@@ -1436,6 +1541,21 @@ Type: solve [code]`,
         answer: "total += num",
         success: "core"
       }
+    },
+
+    // IF/ELSE ROOM
+    ifelse: {
+      enterFirst: `> CONDITIONAL NODE ACCESSED
+  
+A digital gate materialises in front of you, its logic incomplete.
+It requires a condition to determine which path the data should flow through.
+A rule flashes in front of you...`,
+
+      enterOther: "You return to the conditional node. The gate awaits your input.",
+
+      desc: `\nThe gate's logic is missing a crucial component - the condition.`,
+
+      exits: {},
     },
 
     // FIREWALL
@@ -1655,8 +1775,204 @@ function HomeScreen({
   );
 }
 
-// ── LEVEL 1 – IF/ELSE ─────────────────────────
+// ── LEVEL 1 – BINARY TO DECIMAL ───────────────
 function Level1({ onComplete, onBack, onAchievement }) {
+  const [started, setStarted] = useState(false);
+  const [questions] = useState(() => generateBinaryQuestions(7));
+  const [qIdx, setQIdx] = useState(0);
+  const [answer, setAnswer] = useState("");
+  const [answered, setAnswered] = useState(false);
+  const [score, setScore] = useState(0);
+  const [mistakes, setMistakes] = useState(0);
+  const [done, setDone] = useState(false);
+  const [firstCorrect, setFirstCorrect] = useState(false);
+
+  const q = questions[qIdx];
+  const progress = (qIdx / questions.length) * 100;
+
+  if (!started) {
+    return (
+      <div className="screen">
+        <div className="victory-card">
+          <div className="victory-title">BINARY → DECIMAL</div>
+
+          <div style={{ color: "var(--text-dim)", marginBottom: 16 }}>
+            Learn how computers convert binary numbers into decimal.
+          </div>
+
+          <div className="info-box" style={{ textAlign: "left" }}>
+            <strong>How it works:</strong>
+            <br /><br />
+            Each position represents a power of 2:
+            <br />
+            <span style={{ color: "var(--accent)" }}>
+              8 &nbsp;&nbsp; 4 &nbsp;&nbsp; 2 &nbsp;&nbsp; 1
+            </span>
+            <br /><br />
+            Multiply each bit by its value, then add:
+            <br /><br />
+            <span style={{ color: "var(--accent3)" }}>
+              1010 = 1×8 + 0×4 + 1×2 + 0×1 = 10
+            </span>
+          </div>
+
+          <button
+            className="btn btn-primary"
+            onClick={() => setStarted(true)}
+          >
+            Start Level →
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  function checkAnswer() {
+    if (answered) return;
+
+    const userValue = Number(answer.trim());
+    const correct = userValue === q.answer;
+
+    setAnswered(true);
+    playSound(correct ? "correct" : "wrong");
+
+    if (correct) {
+      setScore(s => s + 100);
+
+      if (!firstCorrect) {
+        setFirstCorrect(true);
+        if (onAchievement) onAchievement("first_blood");
+      }
+    } else {
+      setMistakes(m => m + 1);
+    }
+  }
+
+  function next() {
+    if (qIdx + 1 >= questions.length) {
+      setDone(true);
+    } else {
+      setQIdx(i => i + 1);
+      setAnswer("");
+      setAnswered(false);
+    }
+  }
+
+  if (done) {
+    const stars = score >= 500 ? "⭐⭐⭐" : score >= 300 ? "⭐⭐" : "⭐";
+
+    return (
+      <div className="screen">
+        <div className="victory-card">
+          <div className="victory-title">LEVEL COMPLETE!</div>
+          <div className="stars">{stars}</div>
+          <div style={{ color: "var(--text-dim)", marginBottom: 8 }}>
+            Binary conversion mastered
+          </div>
+          <div className="victory-score">{score} pts</div>
+          <div style={{ color: "var(--text-dim)", fontSize: "0.8rem", marginBottom: 24 }}>
+            You converted binary values into decimal numbers.
+          </div>
+          <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+            <button className="btn btn-ghost" onClick={onBack}>
+              ← Menu
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={() => onComplete(score, mistakes)}
+            >
+              Next Level →
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="game-screen">
+      <div className="game-header">
+        <button
+          className="btn btn-ghost"
+          style={{ padding: "6px 12px", fontSize: "0.7rem" }}
+          onClick={onBack}
+        >
+          ← Back
+        </button>
+        <div className="level-tag">LEVEL 1</div>
+        <div className="game-title">Binary to Decimal</div>
+        <div className="score-display">{score} pts</div>
+      </div>
+
+      <div className="progress-bar">
+        <div className="progress-fill" style={{ width: `${progress}%` }} />
+      </div>
+
+      <div className="info-box">
+        Question {qIdx + 1} of {questions.length} — Convert this binary number into decimal.
+      </div>
+
+      <div className="code-block" style={{ textAlign: "center" }}>
+        <div style={{ fontSize: "0.75rem", color: "var(--text-dim)", marginBottom: 12 }}>
+          Binary
+        </div>
+        <div style={{ fontSize: "3rem", color: "var(--accent)", letterSpacing: 8 }}>
+          {q.binary}
+        </div>
+        <div style={{ marginTop: 14, fontSize: "0.8rem", color: "var(--text-dim)" }}>
+          Use place values: 8, 4, 2, 1 for 4-bit numbers.
+        </div>
+      </div>
+
+      <div className="hint-text">
+        💡 Example: 1010 = 1×8 + 0×4 + 1×2 + 0×1 = 10
+      </div>
+
+      <div className="adventure-input-row">
+        <span className="adventure-prompt">decimal&gt;</span>
+        <input
+          className="adventure-input"
+          value={answer}
+          onChange={e => setAnswer(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === "Enter" && answer.trim() && !answered) {
+              checkAnswer();
+            }
+          }}
+          placeholder="type decimal answer..."
+          disabled={answered}
+          autoFocus
+        />
+      </div>
+
+      {!answered && (
+        <button className="btn btn-primary" onClick={checkAnswer} style={{ alignSelf: "flex-start" }}>
+          Check Answer
+        </button>
+      )}
+
+      {answered && (
+        <>
+          <div className={`feedback-box ${Number(answer.trim()) === q.answer ? "correct" : "wrong"}`}>
+            <strong>
+              {Number(answer.trim()) === q.answer ? "✅ Correct!" : `❌ Not quite — answer was ${q.answer}`}
+            </strong>
+            <br />
+            {q.explanation}
+          </div>
+
+          <button className="btn btn-primary" onClick={next} style={{ alignSelf: "flex-end" }}>
+            {qIdx + 1 >= questions.length ? "See Results →" : "Next →"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── LEVEL 2 – IF/ELSE ─────────────────────────
+function Level2({ onComplete, onBack, onAchievement }) {
+  const [started, setStarted] = useState(false);
   const [qIdx, setQIdx] = useState(0);
   const [selected, setSelected] = useState(null);
   const [answered, setAnswered] = useState(false);
@@ -1696,6 +2012,42 @@ function Level1({ onComplete, onBack, onAchievement }) {
   }
 
   const isCorrect = answered && q.correctAnswers.includes(selected);
+
+  if (!started) {
+    return (
+      <div className="screen">
+        <div className="victory-card">
+          <div className="victory-title">IF / ELSE</div>
+
+          <div style={{ color: "var(--text-dim)", marginBottom: 16 }}>
+            Complete Python if/else statements by choosing the condition that makes the code behave correctly.
+          </div>
+
+          <div className="info-box" style={{ textAlign: "left" }}>
+            <strong>How it works:</strong>
+            <br /><br />
+            Read the scenario, inspect the Python code, then choose the missing condition.
+            <br /><br />
+            Example:
+            <br />
+            <span style={{ color: "var(--accent3)" }}>
+              if age &gt;= 18:
+            </span>
+            <br />
+            &nbsp;&nbsp;&nbsp;&nbsp;print("You can vote!")
+            <br />
+            else:
+            <br />
+            &nbsp;&nbsp;&nbsp;&nbsp;print("Too young.")
+          </div>
+
+          <button className="btn btn-primary" onClick={() => setStarted(true)}>
+            Start Level →
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (done) {
     const stars = score >= 300 ? "⭐⭐⭐" : score >= 200 ? "⭐⭐" : "⭐";
@@ -1743,7 +2095,7 @@ function Level1({ onComplete, onBack, onAchievement }) {
         >
           ← Back
         </button>
-        <div className="level-tag">LEVEL 1</div>
+        <div className="level-tag">LEVEL 2</div>
         <div className="game-title">If / Else</div>
         <div className="score-display">{score} pts</div>
       </div>
@@ -1844,8 +2196,8 @@ function Level1({ onComplete, onBack, onAchievement }) {
   );
 }
 
-// ── LEVEL 2 – LOGIC GATES ─────────────────────
-function Level2({ onComplete, onBack }) {
+// ── LEVEL 3 – LOGIC GATES ─────────────────────
+function Level3({ onComplete, onBack }) {
   const [pIdx, setPIdx] = useState(0);
   const [selectedGate, setSelectedGate] = useState("AND");
   const [answered, setAnswered] = useState(false);
@@ -2087,6 +2439,7 @@ function Level4({ onComplete, onBack }) {
     { text: "Type: go [direction] / look / help", type: "system" },
   ]);
 
+  const [started, setStarted] = useState(false);
   const [input, setInput] = useState("");
   const [won, setWon] = useState(false);
   const [score, setScore] = useState(300);
@@ -2098,16 +2451,25 @@ function Level4({ onComplete, onBack }) {
   const [logicScreen, setLogicScreen] = useState(false);
   const [binaryCode, setBinaryCode] = useState([]);
   const [glitch, setGlitch] = useState(false);
-  const [visitedRooms, setVisitedRooms] = useState({});
+  const [visitedRooms, setVisitedRooms] = useState({
+    room1: true
+  });
   const [completedRooms, setCompletedRooms] = useState({});
   const [locked, setLocked] = useState(false);
   const [debugStage, setDebugStage] = useState(1);
   const [debugPuzzle, setDebugPuzzle] = useState(null);
   const [debugWrongAttempts, setDebugWrongAttempts] = useState(0);
+  const [ifPuzzle, setIfPuzzle] = useState(null);
+  const [ifStage, setIfStage] = useState(1);
+
+  const [firewallBoss, setFirewallBoss] = useState(null);
+  const [firewallAttempts, setFirewallAttempts] = useState(0);
+
   const FAST_MODE = true; // for testing true = instant text, false = typewriter effect
   const CHAR_SPEED = FAST_MODE ? 0 : 35;
   const LINE_DELAY = FAST_MODE ? 0 : 700;
   const delay = (ms) => FAST_MODE ? ms * 0.6 : ms; // speed up all timeouts in fast mode
+  
 
   useEffect(() => {
     if (historyRef.current) {
@@ -2119,10 +2481,12 @@ function Level4({ onComplete, onBack }) {
   }, [displayedHistory]);
 
   useEffect(() => {
+    if (!started) return;
+
     history.forEach((line) => {
       addLine(line.text, line.type);
     });
-  }, []);
+  }, [started]);
 
   const typingQueue = useRef(Promise.resolve());
 
@@ -2232,26 +2596,28 @@ function Level4({ onComplete, onBack }) {
       });
   }
 
-  function handleRoomSuccess(roomId, bits = 1, delay = 1200) {
+  function handleRoomSuccess(roomId, bits = 1, transitionDelay = 1200) {
     return addLine("✅ NODE STABILISED", "success")
       .then(() => new Promise(r => setTimeout(r, delay(800))))
 
       .then(() => {
         if (bits > 0) return awardBits(bits);
 
-        addLine("> NO DATA RECOVERED", "error")
+        addLine("> NO DATA RECOVERED", "error");
         return Promise.resolve(binaryCode);
       })
+
       .then(updatedCode => {
-        return new Promise(r => setTimeout(() => r(updatedCode), 1500));
+        return new Promise(r => setTimeout(() => r(updatedCode), delay(1500)));
       })
+
       .then(updatedCode => {
         setCompletedRooms(prev => ({
           ...prev,
           [roomId]: true
         }));
 
-        return completeRoom(roomId, delay, updatedCode);
+        return completeRoom(roomId, transitionDelay, updatedCode);
       });
   }
 
@@ -2372,11 +2738,11 @@ function generateDebugPuzzle(stage = 1) {
       stage,
       question: `Code snippet:
 
-let total = 0;
-let numbers = [2, 4, 6];
+total = 0
+numbers = [2, 4, 6]
 
-for (let num of numbers) {
-  total = num;
+for num in numbers:
+    total = num
 }
 
 What is the bug?`,
@@ -2391,11 +2757,11 @@ What is the bug?`,
       stage,
       question: `Fix the broken line:
 
-let total = 0;
-let numbers = [2, 4, 6];
+total = 0
+numbers = [2, 4, 6]
 
-for (let num of numbers) {
-  total = num;
+for num in numbers:
+    total = num
 }
 
 Type the corrected line.`,
@@ -2417,6 +2783,90 @@ score -= 5;
 console.log(score);`,
     answers: ["15"],
     hint: "Follow the operations step by step: start with 3, add 2, then multiply by 4, then subtract 5. What do you get?"
+  };
+}
+
+function generateIfElsePuzzle(stage = 1) {
+  if (stage === 1) {
+    const energy = Math.floor(Math.random() * 100);
+    const threshold = 40;
+    const result = energy >= threshold;
+
+    return {
+      stage,
+      title: "Power threshold",
+      condition: `energy >= ${threshold}`,
+      variables: [`energy = ${energy}`],
+      correct: result ? "north" : "south",
+      explanation: `${energy} >= ${threshold} is ${result ? "TRUE" : "FALSE"}.`
+    };
+  }
+
+  if (stage === 2) {
+    const accessLevel = Math.floor(Math.random() * 5) + 1;
+    const systemLocked = Math.random() < 0.5;
+    const result = accessLevel >= 3 && systemLocked === false;
+
+    return {
+      stage,
+      title: "Access control",
+      condition: `access_level >= 3 and system_locked == False`,
+      variables: [
+        `access_level = ${accessLevel}`,
+        `system_locked = ${systemLocked ? "True" : "False"}`
+      ],
+      correct: result ? "north" : "south",
+      explanation: `Access only succeeds if level is 3 or higher AND the system is not locked.`
+    };
+  }
+
+  const signalStable = Math.random() < 0.5;
+  const overrideActive = Math.random() < 0.5;
+  const corruptionLevel = Math.floor(Math.random() * 100);
+  const result = (signalStable || overrideActive) && corruptionLevel < 60;
+
+  return {
+    stage,
+    title: "Nested system condition",
+    condition: `(signal_stable or override_active) and corruption_level < 60`,
+    variables: [
+      `signal_stable = ${signalStable ? "True" : "False"}`,
+      `override_active = ${overrideActive ? "True" : "False"}`,
+      `corruption_level = ${corruptionLevel}`
+    ],
+    correct: result ? "north" : "south",
+    explanation: `The first part needs either signal_stable OR override_active to be true, and corruption_level must be below 60.`
+  };
+}
+
+function generateFirewallBoss(codeArray) {
+  const original = codeArray.join("");
+  const ones = original.split("").filter(bit => bit === "1").length;
+
+  let ruleText = "";
+  let transformed = "";
+
+  if (ones > 3) {
+    ruleText = `if number_of_1s > 3:
+    invert_bits()`;
+    transformed = original
+      .split("")
+      .map(bit => bit === "1" ? "0" : "1")
+      .join("");
+  } else {
+    ruleText = `if number_of_1s > 3:
+    invert_bits()
+else:
+    rotate_left()`;
+    transformed = original.slice(1) + original[0];
+  }
+
+  return {
+    original,
+    ones,
+    ruleText,
+    transformed,
+    answer: parseInt(transformed, 2)
   };
 }
 
@@ -2443,6 +2893,21 @@ console.log(score);`,
     // ── LOOK ──────────────────
     } else if (raw === "look") {
       let diagram = "";
+
+      // IF/ELSE ROOM
+      if (room === "ifelse" && ifPuzzle) {
+        return addLine(currentRoom.desc, "system")
+          .then(() => addLine(`> IF / ELSE STAGE ${ifStage}/3`, "system"))
+          .then(() => addLine("", "system"))
+          .then(() => addLine(`> ${ifPuzzle.title.toUpperCase()}`, "system"))
+          .then(() => addLine("", "system"))
+          .then(() => addLine(ifPuzzle.variables.join("\n"), "system"))
+          .then(() => addLine("", "system"))
+          .then(() => addLine(`if ${ifPuzzle.condition}:`, "system"))
+          .then(() => addLine("    go north", "system"))
+          .then(() => addLine("else:", "system"))
+          .then(() => addLine("    go south", "system"));
+      }
 
       // LOGIC ROOM
       if (room === "logic" && logicPuzzle) {
@@ -2508,8 +2973,38 @@ console.log(score);`,
     } else if (raw.startsWith("go ")) {
       const dir = raw.replace("go ", "").trim();
 
-      if (dir === "firewall" && binaryCode.length < 7) {
-        addLine("> ACCESS DENIED - INSUFFICIENT DATA", "error");
+      // IF/ELSE ROOM COLVING
+      if (room === "ifelse" && ifPuzzle) {
+        if (dir === ifPuzzle.correct) {
+          return addLine("> EVALUATING CONDITION...", "system")
+            .then(() => new Promise(r => setTimeout(r, delay(400))))
+            .then(() => addLine("> PROCESSING...", "system"))
+            .then(() => new Promise(r => setTimeout(r, delay(400))))
+            .then(() => addLine("✅ CONDITION EVALUATED CORRECTLY", "success"))
+            .then(() => addLine(`> ${ifPuzzle.explanation}`, "system"))
+            .then(() => {
+              if (ifStage === 3) {
+                return handleRoomSuccess("ifelse", 3);
+              }
+
+              const nextStage = ifStage + 1;
+
+              setIfStage(nextStage);
+              setIfPuzzle(generateIfElsePuzzle(nextStage));
+
+              return addLine(`> IF / ELSE STAGE ${ifStage}/3 COMPLETE`, "system")
+                .then(() => new Promise(r => setTimeout(r, delay(500))))
+                .then(() => addLine(`> LOADING STAGE ${nextStage}/3`, "system"))
+                .then(() => addLine("> Type 'look' to inspect the new condition", "system"));
+            });
+        }
+
+        triggerGlitch(300);
+
+        addLine("❌ CONDITION FAILED", "error");
+        addLine("> PATH INVALID — LOGIC MISMATCH DETECTED", "system");
+        addLine("> RE-EVALUATE THE CONDITION", "system");
+        setScore(s => Math.max(0, s - 10));
         return;
       }
 
@@ -2530,14 +3025,24 @@ console.log(score);`,
             [nextId]: true,
           }));
 
+          const boss = generateFirewallBoss(binaryCode);
+          setFirewallBoss(boss);
+          setFirewallAttempts(0);
+
           loadNewRoom(textToShow)
             .then(() => {
               const code = binaryCode.join("");
 
               addLine(`> DATA FRAGMENTS DETECTED: ${binaryCode.length}`, "system");
 
-              if (code.length > 0) {
-                return addLine(`> CURRENT BINARY: ${code}`, "system");
+              if (boss) {
+                return addLine(`> CURRENT BINARY: ${boss.original}`, "system")
+                  .then(() => addLine("", "system"))
+                  .then(() => addLine("> FIREWALL RULE DETECTED:", "system"))
+                  .then(() => addLine(boss.ruleText, "system"))
+                  .then(() => addLine("", "system"))
+                  .then(() => addLine("> Apply the rule, then convert the result to decimal.", "system"))
+                  .then(() => addLine("Type: solve [decimal]", "system"));
               }
             });          
 
@@ -2567,6 +3072,21 @@ console.log(score);`,
             ...prev,
             [nextId]: true,
           }));
+
+          loadNewRoom(textToShow);
+
+        // IF/ELSE ROOM
+        } else if (nextId === "ifelse") {
+          const textToShow = getRoomText(nextId);
+
+          setVisitedRooms((prev) => ({
+            ...prev,
+            [nextId]: true,
+          }));
+
+          const puzzle = generateIfElsePuzzle(1);
+          setIfPuzzle(puzzle);
+          setIfStage(1);
 
           loadNewRoom(textToShow);
         
@@ -2774,7 +3294,12 @@ console.log(score);`,
           return;
         }
 
-        const correctDecimal = parseInt(binaryString, 2);
+        if (!firewallBoss) {
+          addLine("> FIREWALL ERROR - NO DECRYPTION RULE LOADED", "error");
+          return;
+        }
+
+        const correctDecimal = firewallBoss.answer;
         const userValue = parseInt(answer, 10);
 
         // INVALID INPUT
@@ -2912,6 +3437,46 @@ console.log(score);`,
     }
   }
 
+  if (!started) {
+    return (
+      <div className="screen">
+        <div className="victory-card">
+          <div className="victory-title">TEXT ADVENTURE</div>
+
+          <div style={{ color: "var(--text-dim)", marginBottom: 16 }}>
+            You have been digitised inside a computer system. Explore rooms, solve puzzles, collect binary fragments, and bypass the firewall to escape.
+          </div>
+
+          <div className="info-box" style={{ textAlign: "left" }}>
+            <strong>Commands:</strong>
+            <br /><br />
+            <span style={{ color: "var(--accent3)" }}>go north</span> / 
+            <span style={{ color: "var(--accent3)" }}> go south</span> / 
+            <span style={{ color: "var(--accent3)" }}> go east</span> / 
+            <span style={{ color: "var(--accent3)" }}> go west</span>
+            <br /><br />
+            <span style={{ color: "var(--accent3)" }}>look</span> — inspect the current room
+            <br />
+            <span style={{ color: "var(--accent3)" }}>solve [answer]</span> — solve a puzzle
+            <br />
+            <span style={{ color: "var(--accent3)" }}>help</span> — show commands again
+          </div>
+
+          <div className="hint-text">
+            💡 Tip: Use <span style={{ color: "var(--accent)" }}>look</span> when entering puzzle rooms.
+          </div>
+
+          <button
+            className="btn btn-primary"
+            onClick={() => setStarted(true)}
+          >
+            Start Adventure →
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (won) {
     const stars = score >= 280 ? "⭐⭐⭐" : score >= 180 ? "⭐⭐" : "⭐";
     return (
@@ -3031,6 +3596,10 @@ function App() {
   const [unlockedAchievements, setUnlockedAchievements] = useState([]);
   const [toastQueue, setToastQueue] = useState([]);
 
+  function handleSelectLevel(id) {
+  setScreen(`level${id}`);
+}
+
   function unlockAchievement(id) {
     if (unlockedAchievements.includes(id)) return;
     const achievement = ACHIEVEMENTS.find((a) => a.id === id);
@@ -3055,9 +3624,10 @@ function App() {
     // ── ACHIEVEMENTS ON LEVEL COMPLETE ──
     if (mistakes === 0) {
       const ids = {
-        1: "no_mistakes_1",
-        2: "no_mistakes_2"
-      };
+      1: "no_mistakes_1",
+      2: "no_mistakes_2",
+      3: "no_mistakes_3"
+    };
       if (ids[levelId]) unlockAchievement(ids[levelId]);
     }
     if (levelId === 4) unlockAchievement("escapee");
@@ -3065,9 +3635,9 @@ function App() {
     const newCompleted = completedLevels.includes(levelId)
       ? completedLevels
       : [...completedLevels, levelId];
-    if (newCompleted.length >= 3) unlockAchievement("all_levels");
+    if (newCompleted.length >= 4) unlockAchievement("all_levels");
 
-    const nextId = levelId === 2 ? 4 : levelId + 1;
+    const nextId = levelId + 1;
     if (nextId <= 4) setScreen(`level${nextId}`);
     else setScreen("home");
   }
@@ -3090,8 +3660,16 @@ function App() {
         />
       )}
       {screen === "level2" && (
-        <Level2Wrapper
+        <Level2
           onComplete={(pts, mistakes) => completeLevel(2, pts, mistakes)}
+          onBack={() => setScreen("home")}
+          onAchievement={unlockAchievement}
+        />
+      )}
+
+      {screen === "level3" && (
+        <Level3Wrapper
+          onComplete={(pts, mistakes) => completeLevel(3, pts, mistakes)}
           onBack={() => setScreen("home")}
           onAchievement={unlockAchievement}
         />
